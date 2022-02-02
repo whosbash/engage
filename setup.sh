@@ -186,12 +186,10 @@ printHeader () {
 }
 
 printFooter () {
-	declare -i line_length=$2
-
 	# Upper and lower fences 
 	local command="print \"$1\" *" 
-	local fence="$(python -c "$upper_command $line_length")"
-
+	local fence="$(python -c "$command $2")"
+	
 	echo "$fence"
 }
 
@@ -292,8 +290,5 @@ requestApproval () {
 	echo $response
 }
 
-task='configure ssh'
 preparePackages $1
-
-task='configure ssh'
-configSSH
+#configSSH
