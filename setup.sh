@@ -1,86 +1,75 @@
 #!/bin/bash
 
-MENU_WIDTH=50
+MENU_WIDTH=75
 
-installAPTPackage(){
+installPackage(){
 	#  Check to see if Xclip is installed if not install it
-	if [ $(dpkg-query -W -f='${Status}' $1 | grep -c "ok installed") -eq 1 ];
+	if [ $2 -eq 1 ];
 	then
-	  echo "apt \"$1\" is already installed!"
+	  echo "$4 package \"$1\" is already installed!"
 	else
-	  apt -qq install $1 -y;
-	  echo "\"$1\" was not installed. It is installed now!"
-	fi
-}
-
-installSnapPackage () {
-	if [ $(snap list | grep -c $1) -eq 0 ]
-	then
-	   snap install $1 --classic
-	   echo "\"$1\" was not installed. It is installed now!";
-	else
-	  echo "snap \"$1\" is already installed!"
-	fi
-}
-
-installPipPackage () {
-	#  Check to see if Xclip is installed if not install it
-	if [ $(pip freeze | grep -c "$1") -eq 0 ];
-	then
-	  pip install $1;
-	  echo "\"$1\" was not installed. It is installed now!"
-	else
-	  echo "pip package \"$1\" already installed!"
+	  eval $3
+	  echo "$4 \"$1\" was not installed. It is installed now!"
 	fi
 }
 
 # Install useful utils from different package repositories
 installPackages() {	
+	local is_installed=0
+	local install_command=''
+
 	# apt-get
-	for package in pandas numpy git python3-dev python3-pip  python3-venv virtualenv ipe xclip google-chrome-stable
+	for package in git python3-dev python3-pip  python3-venv virtualenv ipe xclip google-chrome-stable python3-apt
 	do
-		installAPTPackage $package
+		is_installed=$(dpkg-query -W -f='${Status}' $package | grep -c "ok installed")
+		install_command="apt install $package -y;"
+		
+		installPackage $package $is_installed "$install_command" 'apt'
 	done
 	
 	# snap
 	for package in slack sublime-text
 	do
-		installSnapPackage $package
+		is_installed=$(snap list | grep -c $package)
+		install_command="snap install $package --classic"
+
+		installPackage $package $is_installed "$install_command" 'snap'
 	done
 
 	# pip
 	for package in numpy pandas matplotlib scipy scikit-learn notebook
 	do
-		installPipPackage $package
+		is_installed=$(pip freeze | grep -c "$package")
+		install_command="pip install $package"
+
+		installPackage $package $is_installed "$install_command" 'pip'
 	done
 
 }
 
 # Update, upgrade and fix packages
 updatePackages() {
-	declare -i line_length=$MENU_WIDTH
-	printHeader "-" "-" "|" "$line_length" "Update packages"
+	printHeader "-" "-" "|" $MENU_WIDTH "Update packages"
 
 	echo "Updating current packages..."
 	apt -qq update
-	printFooter "-" $line_length
+	printFooter "-" $MENU_WIDTH
 	
 	echo "Upgrading current packages..."
 	apt-get -qq upgrade -y
-	printFooter "-" $line_length
+	printFooter "-" $MENU_WIDTH
 
 	echo "Fixing current packages..."
 	apt --fix-broken install
-	printFooter "-" $line_length
+	printFooter "-" $MENU_WIDTH
 
 	echo "Removing unnecessary packages..."
     apt autoremove -y
-    printFooter "-" $line_length
+    printFooter "-" $MENU_WIDTH
 
     echo "Removing unnecessary packages..."
     apt full-upgrade
-    printFooter "-" $line_length
-
+    printFooter "-" $MENU_WIDTH
 }
 
 preparePackages() {
@@ -214,7 +203,7 @@ generateSSHKey () {
 	declare file_name=$1
 	declare file_extension=$2
 
-	printHeader "-" "-" "|" $printHeader "Generate SSH key "
+	printHeader "-" "-" "|" $MENU_WIDTH "Generate SSH key "
 
 	# Generate ssh key
 	ssh-keygen -t $2 -C "$(getInfo 'e-mail')"
