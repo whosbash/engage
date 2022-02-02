@@ -34,7 +34,7 @@ installPipPackage () {
 # Install useful utils from different package repositories
 installPackages() {	
 	# apt-get
-	for package in git python3-dev python3-pip virtualenv ipe xclip google-chrome-stable
+	for package in pandas numpy git python3-dev python3-pip  python3-venv virtualenv ipe xclip google-chrome-stable
 	do
 		installAPTPackage $package
 	done
@@ -60,23 +60,23 @@ updatePackages() {
 
 	echo "Updating current packages..."
 	apt -qq update
-	printFooter "-" "$line_length"
+	printFooter "-" $line_length
 	
 	echo "Upgrading current packages..."
 	apt-get -qq upgrade -y
-	printFooter "-" "$line_length"
+	printFooter "-" $line_length
 
 	echo "Fixing current packages..."
 	apt --fix-broken install
-	printFooter "-" "$line_length"
+	printFooter "-" $line_length
 
 	echo "Removing unnecessary packages..."
     apt autoremove -y
-    printFooter "-" "$line_length"
+    printFooter "-" $line_length
 
     echo "Removing unnecessary packages..."
     apt full-upgrade
-    printFooter "-" "$line_length"
+    printFooter "-" $line_length
 
 }
 
@@ -250,5 +250,43 @@ configGitMail () {
 	git config --global user.name "$1"
 }
 
-preparePackages $1
-configSSH $2 $3
+requestApproval () {
+	local response='n'
+
+	while [ true ];
+	do
+		read -p "Do you wish to $1? [y/n/q]: " response
+		
+		if [ $response == "y" ]; then
+			local compose_particle='do'
+
+		elif [ $response == "n" ]; then
+			local compose_particle='do not'
+
+		elif [ $response == "q" ]; then
+			exit 1
+		fi
+
+		read -p "Are you sure you $compose_particle $1? [y/n/q]: " response
+	
+		if [ $response == "y" ]; then
+			break
+		fi
+	done
+
+	echo $response
+}
+
+#preparePackages $1
+
+task='configure ssh'
+requestApproval $task | read answer
+
+
+if [ "$answer" == "y" ]; then
+	echo "$task accepted!"
+	echo "Task \"$task\" done"
+
+elif [ "$answer"	 == "n" ]; then
+	echo "$task refused!"
+fi
