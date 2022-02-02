@@ -1,35 +1,40 @@
 #!/bin/bash
-
 installAPTPackage(){
 	#  Check to see if Xclip is installed if not install it
-	if [ $(dpkg-query -W -f='${Status}' $1 | grep -c "ok installed") -eq 0 ];
+	if [ $(dpkg-query -W -f='${Status}' $1 | grep -c "ok installed") -eq 1 ];
 	then
-	  echo "\"$1\" is not installed .... installing now!"
-	  apt install $1 -y;
+	  echo "apt \"$1\" is already installed!"
 	else
-	  echo "\"$1\" installed!"
+	  apt -qq install $1 -y;
+	  echo "\"$1\" was not installed. It is installed now!"
 	fi
 }
 
 installSnapPackage () {
 	if [ $(snap list | grep -c $1) -eq 0 ]
 	then
-	   echo "\"$1\" is not installed .... installing now!";
 	   snap install $1 --classic
+	   echo "\"$1\" was not installed. It is installed now!";
 	else
-	  echo "\"$1\" is installed!"
+	  echo "snap \"$1\" is already installed!"
+	fi
+}
+
+installPipPackage () {
+	#  Check to see if Xclip is installed if not install it
+	if [ $(pip freeze | grep -c "$1") -eq 0 ];
+	then
+	  pip install $1;
+	  echo "\"$1\" was not installed. It is installed now!"
+	else
+	  echo "pip package \"$1\" already installed!"
 	fi
 }
 
 # Install useful utils from different package repositories
 installPackages() {	
-	# snap
-	sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
-	wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-	apt-get install google-chrome-stable
-	
 	# apt-get
-	for package in git python3-dev python3-pip virtualenv ipe xclip 
+	for package in git python3-dev python3-pip virtualenv ipe xclip google-chrome-stable
 	do
 		installAPTPackage $package
 	done
@@ -41,22 +46,43 @@ installPackages() {
 	done
 
 	# pip
-	pip install numpy pandas matplotlib scipy scikit-learn notebook
+	for package in numpy pandas matplotlib scipy scikit-learn notebook
+	do
+		installPipPackage $package
+	done
+
 }
 
 # Update, upgrade and fix packages
 updatePackages() {
-	printHeader ""
+	declare -i line_length=50
+	printHeader "-" "-" "|" "$line_length" "Update packages"
 
-	apt update
-	apt-get upgrade -y
+	echo "Updating current packages..."
+	apt -qq update
+	printFooter "-" "$line_length"
+	
+	echo "Upgrading current packages..."
+	apt-get -qq upgrade -y
+	printFooter "-" "$line_length"
+
+	echo "Fixing current packages..."
 	apt --fix-broken install
+	printFooter "-" "$line_length"
+
+	echo "Removing unnecessary packages..."
     apt autoremove -y
+    printFooter "-" "$line_length"
+
+    echo "Removing unnecessary packages..."
     apt full-upgrade
+    printFooter "-" "$line_length"
 
 }
 
 preparePackages() {
+	printHeader "#" "#" "#" 50 "Prepare packages"
+
 	# Save tilde as home alias
 	if grep -q "alias ~=/home/$1" /home/$1/.bashrc; 
 	then
@@ -120,7 +146,6 @@ chooseSCM () {
 	    echo "Selected SCM: $SCM, number $REPLY"
 	done
 
-
 }
 
 getInfo () {
@@ -168,6 +193,16 @@ printHeader () {
 	echo "$lower_fence"
 }
 
+printFooter () {
+	declare -i line_length=$2
+
+	# Upper and lower fences 
+	local command="print \"$1\" *" 
+	local fence="$(python -c "$upper_command $line_length")"
+
+	echo "$fence"
+}
+
 generateSSHKey () {
 	declare file_path="/$(whoami)/.ssh/$1_$2"
 	declare full_file_path="$file_path.pub"
@@ -200,8 +235,6 @@ configSSH () {
 	waitUser 
 }
 
-
-
 cloneRepositories () {
 	git clone "git@github.com:$1/$2.git"
 }
@@ -214,4 +247,4 @@ configGitMail () {
 	git config --global user.name "$1"
 }
 
-configSSH
+installPackages
