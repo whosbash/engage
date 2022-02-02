@@ -1,4 +1,7 @@
 #!/bin/bash
+
+MENU_WIDTH=50
+
 installAPTPackage(){
 	#  Check to see if Xclip is installed if not install it
 	if [ $(dpkg-query -W -f='${Status}' $1 | grep -c "ok installed") -eq 1 ];
@@ -55,7 +58,7 @@ installPackages() {
 
 # Update, upgrade and fix packages
 updatePackages() {
-	declare -i line_length=50
+	declare -i line_length=$MENU_WIDTH
 	printHeader "-" "-" "|" "$line_length" "Update packages"
 
 	echo "Updating current packages..."
@@ -81,7 +84,7 @@ updatePackages() {
 }
 
 preparePackages() {
-	printHeader "#" "#" "#" 50 "Prepare packages"
+	printHeader "#" "#" "#" $MENU_WIDTH "Prepare packages"
 
 	# Save tilde as home alias
 	if grep -q "alias ~=/home/$1" /home/$1/.bashrc; 
@@ -211,7 +214,7 @@ generateSSHKey () {
 	declare file_name=$1
 	declare file_extension=$2
 
-	printHeader "-" "-" "|" 50 "Generate SSH key "
+	printHeader "-" "-" "|" $printHeader "Generate SSH key "
 
 	# Generate ssh key
 	ssh-keygen -t $2 -C "$(getInfo 'e-mail')"
@@ -229,13 +232,36 @@ generateSSHKey () {
 
 }
 
-configSSH () {
-	printHeader "#" "#" "|" 50 "SSH key configuration"
-	generateSSHKey "id" "rsa"
-	waitUser 
+testSSHConnection () {
+	declare file_path="/$(whoami)/.ssh/$1_$2"
+	declare full_file_path="$file_path.pub"
 
-	configGitUser $1
-	configGitMail $2
+	if [ $(ssh -T git@github.com | grep -c "You've successfully authenticated") -eq 1 ];
+	then
+	  echo "$(ssh -T git@github.com)"
+	else
+	  echo "Your SSH key is not configured properly."
+	  echo "Either setup your SCM tool with the content of file $full_file_path or ask your supervisor to do it."
+	fi
+}
+
+configSSH () {
+	task='configure ssh'
+	requestApproval $task | read answer
+
+	if [ "$answer" == "y" ]; then
+		printHeader "#" "#" "|" 50 "SSH key configuration"
+		generateSSHKey "id" "rsa"
+		waitUser 
+
+		testSSHConnection "id" "rsa"
+
+		getInfo "git e-mail"
+		configGitUser $?
+		
+		getInfo "git name"
+		configGitMail $?
+	fi
 }
 
 cloneRepositories () {
@@ -277,16 +303,8 @@ requestApproval () {
 	echo $response
 }
 
-#preparePackages $1
+task='configure ssh'
+preparePackages $1
 
 task='configure ssh'
-requestApproval $task | read answer
-
-
-if [ "$answer" == "y" ]; then
-	echo "$task accepted!"
-	echo "Task \"$task\" done"
-
-elif [ "$answer"	 == "n" ]; then
-	echo "$task refused!"
-fi
+configSSH
