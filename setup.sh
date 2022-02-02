@@ -233,6 +233,9 @@ configSSH () {
 	printHeader "#" "#" "|" 50 "SSH key configuration"
 	generateSSHKey "id" "rsa"
 	waitUser 
+
+	configGitUser $1
+	configGitMail $2
 }
 
 cloneRepositories () {
@@ -247,4 +250,5 @@ configGitMail () {
 	git config --global user.name "$1"
 }
 
-installPackages
+preparePackages $1
+configSSH $2 $3
