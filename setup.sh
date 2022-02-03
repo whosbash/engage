@@ -1,6 +1,11 @@
 #!/bin/bash
 
-MENU_WIDTH=75
+MENU_WIDTH=100
+UPPER_FENCE_MARKER='-'
+LOWER_FENCE_MARKER='-'
+LEFT_FENCE_MARKER='|'
+RIGHT_FENCE_MARKER='|'
+CORNER_MARKER='#'
 
 installPackage(){
 	#  Check to see if Xclip is installed if not install it
@@ -49,31 +54,30 @@ installPackages() {
 
 # Update, upgrade and fix packages
 updatePackages() {
-	printHeader "-" "-" "|" $MENU_WIDTH "Update packages"
-
-	echo "Updating current packages..."
+	
+	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Updating current packages..."
 	apt -qq update
 	printFooter "-" $MENU_WIDTH
 	
-	echo "Upgrading current packages..."
+	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Upgrading current packages..."
 	apt-get -qq upgrade -y
 	printFooter "-" $MENU_WIDTH
 
-	echo "Fixing current packages..."
+	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Fixing current packages..."
 	apt --fix-broken install
 	printFooter "-" $MENU_WIDTH
 
-	echo "Removing unnecessary packages..."
+	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Removing unnecessary packages..."
     apt autoremove -y
     printFooter "-" $MENU_WIDTH
 
-    echo "Removing unnecessary packages..."
+    printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Removing unnecessary packages..."
     apt full-upgrade
     printFooter "-" $MENU_WIDTH
 }
 
 preparePackages() {
-	printHeader "#" "#" "#" $MENU_WIDTH "Prepare packages"
+	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Prepare packages"
 
 	# Save tilde as home alias
 	if grep -q "alias ~=/home/$1" /home/$1/.bashrc; 
@@ -102,8 +106,8 @@ floor() {
 # Repeat given char N times using shell function
 repeat(){
 	local start=1
-	local end=${1:-80}
-	local str="${2:-=}"
+	local end=${1:-$1}
+	local str="${2:-$2}"
 	local range=$(seq $start $end)
 	for i in $range ; do echo -n "${str}"; done
 }
@@ -158,30 +162,49 @@ getInfo () {
 }
 
 printHeader () {
-	declare -i line_length=$4
+	declare -i line_length=$1
 	
-	# Upper and lower fences 
-	local upper_command="print \"$1\" *" 
-	local upper_fence="$(python -c "$upper_command $line_length")*"
+	local upper_marker="$2" 
+	local right_marker="$3"
+	local lower_marker="$4"
+	local left_marker="$5"
 
-	local lower_command="print \"$2\" *"
-	local lower_fence="$(python -c "$lower_command $line_length")*"
+	local len_upper_marker=${#upper_marker}
+	local len_right_marker=${#right_marker}
+	local len_lower_marker=${#lower_marker}
+	local len_left_marker=${#left_marker}
+
+	local corner_marker="$6"
+
+	# Upper fence
+	local upper_fence="$corner_marker$(repeat $line_length $upper_marker)$corner_marker"
 	
+	# Upper indentation
+	local upper_space="$left_marker $(repeat $(($line_length-1-$len_left_marker)) " ") $right_marker"
+	
+	# Lower fence
+	local lower_fence="$corner_marker$(repeat $line_length $lower_marker)$corner_marker"
+
+	# Upper indentation
+	local lower_space="$upper_space"
+
 	# Slice words by some character counter
 	local regex_counter="s/(.{$line_length})/\1\n/g"
 	local regex_trimmer='s/(^ | $)//g'
 
 	# Complete line with dots and a pipe
-	local res="$line_length - length"
+	local res="$line_length-length-1-$len_left_marker"
 	local dot_line="$(repeat $line_length "."; echo)"
 	
 	local arg_0='$0'
 	local arg_1="substr(\"$dot_line\", 1, rest)"
 	
-	local fill_command="{rest=($res); printf \"%s%s$3\n\", $arg_0, $arg_1}"
+	local fill_command="{rest=($res); printf \"$right_marker %s%s $left_marker\n\", $arg_0, $arg_1}"
 
 	echo "$upper_fence"
-	sed -r -e "$regex_counter" <<< $5 | sed -r "$regex_trimmer" | awk "$fill_command"
+	echo "$upper_space" 
+	sed -r -e "$regex_counter" <<< $7 | sed -r "$regex_trimmer" | awk "$fill_command"
+	echo "$lower_space"
 	echo "$lower_fence"
 }
 
