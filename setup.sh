@@ -67,33 +67,57 @@ installPackages() {
 
 }
 
+wrapHeaderFooter () {
+	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "$1"
+	eval "$2"
+	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER	
+}
+
 # Update, upgrade and fix packages
-updatePackages() {
-	
-	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Updating current packages..."
-	apt -qq update
-	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
-	
-	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Upgrading current packages..."
-	apt-get -qq upgrade -y
-	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
+updateAvailableRepositoryPackages() {
+	wrapHeaderFooter 'Update and upgrade current packages.' "$1"
+	wrapHeaderFooter 'Fix current packages.' "$2"
+	wrapHeaderFooter 'Remove unnecessary packages.' "$3"
+}
 
-	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Fixing current packages..."
-	apt --fix-broken install
-	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
+# Update, upgrade and fix packages
+resolveAPTPackages() {
+	updateAvailableRepositoryPackages 'apt -qq update && apt -qq upgrade -y && apt full-upgrade' \
+									  'apt --fix-broken install' \
+									  'apt autoremove -y'
+}
 
-	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Removing unnecessary packages..."
-    apt autoremove -y
-    printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
+resolveSnapPackages() {
+	updateAvailableRepositoryPackages 'snap refresh' \
+									  'echo Snap may require manual repare...' \
+									  'snap list --all | \
+									   while read snapname ver rev trk pub notes; \
+									   do if [[ $notes = *disabled* ]]; then sudo snap remove "$snapname" --revision="$rev"; fi; \
+									   done'
+}
 
-    printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Removing unnecessary packages..."
-    apt full-upgrade
-    printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
+resolvePipPackages() {
+	updateAvailableRepositoryPackages 'pip-review --auto' \
+   									  'echo pip may require manual maintainance...' \
+									  'echo pip has no autoremove unused packages...' \
+									  
+}
+
+
+
+resolvePackages () {
+	resolveAPTPackages
+	resolveSnapPackages
+	resolvePipPackages
 }
 
 clearWarnings () {
+	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Clear warnings."
+
 	chmod a+x aptsources-cleanup.pyz
 	./aptsources-cleanup.pyz
+
+	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
 }
 
 preparePackages() {
@@ -109,7 +133,7 @@ preparePackages() {
 
 	installPackages
 	clearWarnings
-	updatePackages
+	resolvePackages 
 }
 
 mod() {
@@ -243,9 +267,7 @@ generateSSHKey () {
 	
 	declare file_folder=$(whoami)
 	declare file_name=$1
-	declare file_extension=$2
-
-	printHeader "-" "-" "|" $MENU_WIDTH "Generate SSH key "
+	declare file_extension=$2 
 
 	# Generate ssh key
 	ssh-keygen -t $2 -C "$(getInfo 'e-mail')"
@@ -276,13 +298,11 @@ testSSHConnection () {
 	fi
 }
 
-configSSH () {
+resolveSSH () {
 	task='configure ssh'
 	requestApproval $task | read answer
 
-	if [ "$answer" == "y" ]; then
-		printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "SSH key configuration"
-		
+	if [ "$answer" == "y" ]; then		
 		generateSSHKey "id" "rsa"
 		waitUser
 
@@ -306,6 +326,11 @@ configSSH () {
 			configGitMail $?
 		fi
 	fi
+}
+
+configSSH () {
+	local command_='resolveSSH'
+	wrapHeaderFooter "SSH key configuration" $command_
 }
 
 cloneRepository () {
@@ -367,4 +392,5 @@ requestApproval () {
 ############################################################
 ############################################################
 preparePackages $1
-# configSSH
+# resolveSSH
+
