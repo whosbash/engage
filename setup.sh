@@ -97,7 +97,7 @@ resolveSnapPackages() {
 }
 
 resolvePipPackages() {
-	updateAvailableRepositoryPackages 'pip-review --auto' \
+	updateAvailableRepositoryPackages 'pip-review --raw | xargs -n1 pip install -U' \
    									  'echo pip may require manual maintainance...' \
 									  'echo pip has no autoremove unused packages...' \
 									  
