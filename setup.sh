@@ -281,22 +281,49 @@ configSSH () {
 	requestApproval $task | read answer
 
 	if [ "$answer" == "y" ]; then
-		printHeader "#" "#" "|" 50 "SSH key configuration"
+		printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "SSH key configuration"
+		
 		generateSSHKey "id" "rsa"
-		waitUser 
+		waitUser
 
+		# Test connection
 		testSSHConnection "id" "rsa"
 
-		getInfo "git e-mail"
-		configGitUser $?
+		# Get git e-mail
+		task='git e-mail'
+		requestApproval $task | read answer
+
+		if [ "$answer" == "y" ]; then 
+			getInfo $task
+		fi
 		
-		getInfo "git name"
-		configGitMail $?
+		# Get git name
+		task='git name'
+		requestApproval $task | read answer
+
+		if [ "$answer" == "y" ]; then 
+			getInfo $task
+			configGitMail $?
+		fi
 	fi
 }
 
-cloneRepositories () {
-	git clone "git@github.com:$1/$2.git"
+cloneRepository () {
+	local repo_host=''
+	
+	if [[ $1='bitbucket' ]]; then
+		repo_host='bitbucket.org'
+	elif [[ $1='github' ]]; then
+		repo_host='github.com'
+	fi
+
+	if [[ $repo_host='' ]]; then
+		echo 'SVC $1 not currently supported!'
+		exit 0;
+	fi
+
+	git clone "git@$repo_host:$2/$3.git"
+	exit 1;
 }
 
 configGitUser () {
