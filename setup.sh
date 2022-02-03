@@ -195,6 +195,10 @@ printHeader () {
 	local len_lower_marker=${#lower_marker}
 	local len_left_marker=${#left_marker}
 
+	if [[ $(tput cols) -lt $(($line_length+2+$len_left_marker+ $len_right_marker)) ]]; then
+		line_length=$(($(tput cols)- 2 -$len_left_marker-$len_right_marker))
+	fi
+
 	local corner_marker="$6"
 
 	# Upper fence
@@ -230,11 +234,7 @@ printHeader () {
 }
 
 printFooter () {
-	# Upper and lower fences 
-	local command="print \"$1\" *" 
-	local fence="$(python -c "$command $2")"
-	
-	echo "$fence"
+	echo "$3$(repeat $1 $2)$3"
 }
 
 generateSSHKey () {
