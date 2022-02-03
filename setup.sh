@@ -50,7 +50,7 @@ installPackages() {
 	# snap
 	for package in slack sublime-text
 	do
-		is_installed=$(snap list | grep -c $package)
+		is_installed=$(("$(snap list | grep -c $package)" > "0"))
 		install_command="snap install $package --classic"
 
 		installPackage $package $is_installed "$install_command" 'snap'
@@ -59,7 +59,7 @@ installPackages() {
 	# pip
 	for package in numpy pandas matplotlib scipy scikit-learn notebook
 	do
-		is_installed=$(pip freeze | grep -c "$package")
+		is_installed=$(("$(pip freeze | grep -c $package)" > "0"))
 		install_command="pip install $package"
 
 		installPackage $package $is_installed "$install_command" 'pip'
