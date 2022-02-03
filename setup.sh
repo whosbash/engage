@@ -72,23 +72,28 @@ updatePackages() {
 	
 	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Updating current packages..."
 	apt -qq update
-	printFooter "-" $MENU_WIDTH
+	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
 	
 	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Upgrading current packages..."
 	apt-get -qq upgrade -y
-	printFooter "-" $MENU_WIDTH
+	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
 
 	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Fixing current packages..."
 	apt --fix-broken install
-	printFooter "-" $MENU_WIDTH
+	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
 
 	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Removing unnecessary packages..."
     apt autoremove -y
-    printFooter "-" $MENU_WIDTH
+    printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
 
     printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Removing unnecessary packages..."
     apt full-upgrade
-    printFooter "-" $MENU_WIDTH
+    printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
+}
+
+clearWarnings () {
+	chmod a+x aptsources-cleanup.pyz
+	./aptsources-cleanup.pyz
 }
 
 preparePackages() {
@@ -103,6 +108,7 @@ preparePackages() {
 	fi
 
 	installPackages
+	clearWarnings
 	updatePackages
 }
 
