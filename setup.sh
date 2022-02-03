@@ -39,7 +39,7 @@ installPackages() {
 	local install_command=''
 
 	# apt-get
-	for package in git python3-dev python3-pip  python3-venv virtualenv ipe xclip google-chrome-stable python3-apt
+	for package in git python3-dev python3-pip python3-venv python3-apt virtualenv ipe xclip google-chrome-stable
 	do
 		is_installed=$(dpkg-query -W -f='${Status}' $package | grep -c "ok installed")
 		install_command="apt install $package -y;"
@@ -48,7 +48,7 @@ installPackages() {
 	done
 	
 	# snap
-	for package in slack sublime-text
+	for package in slack sublime-text gimp
 	do
 		is_installed=$(("$(snap list | grep -c $package)" > "0"))
 		install_command="snap install $package --classic"
@@ -57,7 +57,7 @@ installPackages() {
 	done
 
 	# pip
-	for package in numpy pandas matplotlib scipy scikit-learn notebook
+	for package in numpy pandas matplotlib scipy scikit-learn notebook pip-review
 	do
 		is_installed=$(("$(pip freeze | grep -c $package)" > "0"))
 		install_command="pip install $package"
