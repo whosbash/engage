@@ -1,5 +1,20 @@
 #!/bin/bash
 
+############################################################
+# Help                                                     #
+############################################################
+Help()
+{
+   # Display Help
+   echo "This command helps to install packages and setup SSH on SVC at certain moment."
+   echo
+   echo "Syntax: scriptTemplate [h|v|V]"
+	   echo "options:"
+   echo "s     Helps to config SSH key."
+   echo "h     Print this Help."
+   echo
+}
+
 MENU_WIDTH=100
 UPPER_FENCE_MARKER='-'
 LOWER_FENCE_MARKER='-'
