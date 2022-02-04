@@ -1,19 +1,12 @@
 #!/bin/bash
 
 ############################################################
-# Help                                                     #
 ############################################################
-Help()
-{
-   # Display Help
-   echo "This command helps to install packages and setup SSH on SVC at certain moment."
-   echo
-   echo "Syntax: scriptTemplate [h|v|V]"
-	   echo "options:"
-   echo "s     Helps to config SSH key."
-   echo "h     Print this Help."
-   echo
-}
+#                                                    	   #
+# Global variables                                         #
+#                                                    	   #
+############################################################
+############################################################
 
 MENU_WIDTH=100
 UPPER_FENCE_MARKER='-'
@@ -21,120 +14,15 @@ LOWER_FENCE_MARKER='-'
 LEFT_FENCE_MARKER='|'
 RIGHT_FENCE_MARKER='|'
 CORNER_MARKER='#'
+AVAILABLE_SCM='github, bucket'
 
-installPackage(){
-	#  Check to see if Xclip is installed if not install it
-	if [ $2 -eq 1 ];
-	then
-	  echo "$4 package \"$1\" is already installed!"
-	else
-	  eval $3
-	  echo "$4 \"$1\" was not installed. It is installed now!"
-	fi
-}
-
-# Install useful utils from different package repositories
-installPackages() {	
-	local is_installed=0
-	local install_command=''
-
-	# apt-get
-	for package in git python3-dev python3-pip python3-venv python3-apt virtualenv ipe xclip google-chrome-stable
-	do
-		is_installed=$(dpkg-query -W -f='${Status}' $package | grep -c "ok installed")
-		install_command="apt install $package -y;"
-		
-		installPackage $package $is_installed "$install_command" 'apt'
-	done
-	
-	# snap
-	for package in slack sublime-text gimp
-	do
-		is_installed=$(("$(snap list | grep -c $package)" > "0"))
-		install_command="snap install $package --classic"
-
-		installPackage $package $is_installed "$install_command" 'snap'
-	done
-
-	# pip
-	for package in numpy pandas matplotlib scipy scikit-learn notebook pip-review
-	do
-		is_installed=$(("$(pip freeze | grep -c $package)" > "0"))
-		install_command="pip install $package"
-
-		installPackage $package $is_installed "$install_command" 'pip'
-	done
-
-}
-
-wrapHeaderFooter () {
-	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "$1"
-	eval "$2"
-	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER	
-}
-
-# Update, upgrade and fix packages
-updateAvailableRepositoryPackages() {
-	wrapHeaderFooter 'Update and upgrade current packages.' "$1"
-	wrapHeaderFooter 'Fix current packages.' "$2"
-	wrapHeaderFooter 'Remove unnecessary packages.' "$3"
-}
-
-# Update, upgrade and fix packages
-resolveAPTPackages() {
-	updateAvailableRepositoryPackages 'apt -qq update && apt -qq upgrade -y && apt full-upgrade' \
-									  'apt --fix-broken install' \
-									  'apt autoremove -y'
-}
-
-resolveSnapPackages() {
-	updateAvailableRepositoryPackages 'snap refresh' \
-									  'echo Snap may require manual repare...' \
-									  'snap list --all | \
-									   while read snapname ver rev trk pub notes; \
-									   do if [[ $notes = *disabled* ]]; then sudo snap remove "$snapname" --revision="$rev"; fi; \
-									   done'
-}
-
-resolvePipPackages() {
-	updateAvailableRepositoryPackages 'pip-review --raw | xargs -n1 pip install -U' \
-   									  'echo pip may require manual maintainance...' \
-									  'echo pip has no autoremove unused packages...' \
-									  
-}
-
-
-
-resolvePackages () {
-	resolveAPTPackages
-	resolveSnapPackages
-	resolvePipPackages
-}
-
-clearWarnings () {
-	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Clear warnings."
-
-	chmod a+x aptsources-cleanup.pyz
-	./aptsources-cleanup.pyz
-
-	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER
-}
-
-preparePackages() {
-	printHeader $MENU_WIDTH $UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER $CORNER_MARKER "Prepare packages"
-
-	# Save tilde as home alias
-	if grep -q "alias ~=/home/$1" /home/$1/.bashrc; 
-	then
-		echo "Home alias is already tilde ~."
-	else
-		echo "alias ~=/home/$1" >> /home/$1/.bashrc
-	fi
-
-	installPackages
-	clearWarnings
-	resolvePackages 
-}
+############################################################
+############################################################
+#                                                    	   #
+# Miscelaneous                                        	   #
+#                                                    	   #
+############################################################
+############################################################
 
 mod() {
 	return $(($1%$2));
@@ -157,12 +45,21 @@ repeat(){
 	for i in $range ; do echo -n "${str}"; done
 }
 
+############################################################
+############################################################
+#                                                    	   #
+# Interface functions                                      #
+#                                                    	   #
+############################################################
+############################################################
+
 # Update, upgrade and fix packages
-waitUser () { 
-    local init_timestamp=$(date)
-    local timeout="${1:-5}"
-    tput sc
-    echo "Press any key to continue..."
+waitUser () {
+   local init_timestamp=$(date)
+   local timeout="${1:-5}"
+   
+   tput sc
+   echo "Press any key to continue..."
 	
 	while [ true ]
 	do
@@ -179,24 +76,14 @@ waitUser () {
 	done
 }
 
-chooseSCM () {
-
-	PS3="Enter the number of Source Code Management (SCM) toolkit: "
-	select SCM in github bitbucket gitlab
-	do
-	    echo "Selected SCM: $SCM, number $REPLY"
-	done
-
-}
-
 getInfo () {
 	while [ true ];
 	do
-		read -p "Type your $1: " email
-		read -p "Is your $1 $email ? [y/n/q]: " response
+		read -p "Type your $1: " info
+		read -p "Is your $1 $info ? [y/n/q]: " response
 
 		if [ $response == "y" ]; then
-			echo $email
+			echo $info
 			return
 
 		elif [ $response == "q" ]; then
@@ -261,14 +148,143 @@ printFooter () {
 	echo "$3$(repeat $1 $2)$3"
 }
 
+wrapHeaderFooter () {
+	printHeader $MENU_WIDTH \
+			 	$UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER \
+				 $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER \
+				 $CORNER_MARKER \
+				 "$1"
+	
+	echo 
+	eval "$2"
+	echo
+
+	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER	
+}
+
+requestApproval () {
+	local final_response='n'
+
+	while [ true ];
+	do
+		read -p "Do you wish to $1? [y/n/q]: " response
+		
+		final_response="$response"
+		
+		if [ $response == "y" ]; then
+			local compose_phrase="do want to $1? [y/n]: "
+
+		elif [ $response == "n" ]; then
+			local compose_phrase="do not want to $1? [y/n]: "
+
+		elif [ $response == "q" ]; then
+			local compose_phrase="want to quit? [y/n]: "
+		fi
+
+		local confirmation="Are you sure you $compose_phrase"
+		read -p "$confirmation" confirmation_response
+
+		if [ $confirmation_response == "y" ]; then
+			break
+		elif [ $confirmation_response == "n" ]; then
+			continue
+		else
+			echo "The response \"$confirmation_response\" is not valid! THe valid responses are \"y\" or \"n\""
+		fi
+	done
+
+	echo $final_response
+}
+
+requestApprovalAndEvaluate () {
+	local task=$1
+
+	echo 
+	local answer="$(echo "$(requestApproval "$task")")"
+	echo 
+
+	if [ "$answer" == "y" ]; then
+		echo 
+		eval $2
+		echo 
+	fi
+}
+
+decorateAskAndEval () {
+	requestApprovalAndEvaluate "$2" "wrapHeaderFooter \"$1\" \"$3\""	
+}
+
+installPackage(){
+	if [ $2 -eq 1 ];
+	then
+	  echo "$4 package \"$1\" is already installed!"
+	else
+	  eval $3
+	  echo "$4 \"$1\" was not installed. It is installed now!"
+	fi
+}
+
+############################################################
+############################################################
+#                                                    	   #
+# Necessary functions                                      #
+#                                                    	   #
+############################################################
+############################################################
+
+# Install useful utils from different package repositories
+installPackages() {	
+	local is_installed=0
+	local install_command=''
+
+	# apt-get
+	for package in git python3-dev python3-pip python3-venv python3-apt \
+				   virtualenv ipe xclip google-chrome-stable
+	do
+		is_installed=$(dpkg-query -W -f='${Status}' $package | grep -c "ok installed")
+		install_command="apt install $package -y;"
+		
+		installPackage $package $is_installed "$install_command" 'apt'
+	done
+	
+	# snap
+	for package in slack sublime-text gimp
+	do
+		is_installed=$(("$(snap list | grep -c $package)" > "0"))
+		install_command="snap install $package --classic"
+
+		installPackage $package $is_installed "$install_command" 'snap'
+	done
+
+	# pip
+	for package in numpy pandas matplotlib scipy scikit-learn notebook pip-review
+	do
+		is_installed=$(("$(pip freeze | grep -c $package)" > "0"))
+		install_command="pip install $package"
+
+		installPackage $package $is_installed "$install_command" 'pip'
+	done
+}
+
+# Update, upgrade and fix packages
+ManageRepositoryPackages () {
+	wrapHeaderFooter "Repository $1: Update and upgrade current packages." "$2"
+	wrapHeaderFooter "Repository $1: Fix current packages." "$3"
+	wrapHeaderFooter "Repository $1: Remove unnecessary packages." "$4"
+}
+
+clearWarnings () {
+	chmod a+x aptsources-cleanup.pyz
+	./aptsources-cleanup.pyz
+}
+
 generateSSHKey () {
 	declare file_path="/$(whoami)/.ssh/$1_$2"
 	declare full_file_path="$file_path.pub"
 	
 	declare file_folder=$(whoami)
 	declare file_name=$1
-	declare file_extension=$2 
-
+	
 	# Generate ssh key
 	ssh-keygen -t $2 -C "$(getInfo 'e-mail')"
 	
@@ -278,72 +294,74 @@ generateSSHKey () {
 	# Agent
 	ssh-add $file_path
 
-	xclip -sel clip < $full_file_path
-	
-	echo "The ssh key content is on clipboard!"
-	echo "Go to your SCM tool (github, bitbucket, gitlab, ...) and setup it in proper place."	
-
+	xclip -sel clip < $full_file_path	
 }
 
 testSSHConnection () {
-	declare file_path="/$(whoami)/.ssh/$1_$2"
-	declare full_file_path="$file_path.pub"
+	declare SCM_name="$1"
+	declare SCM_host=''
+	declare SSHConnection_approval_phrase=''
 
-	if [ $(ssh -T git@github.com | grep -c "You've successfully authenticated") -eq 1 ];
-	then
-	  echo "$(ssh -T git@github.com)"
+	if [[ $SCM_name == "github" ]]; then
+	  SCM_host='github.com'
+	  SSHConnection_approval_phrase='You''ve successfully authenticated'	  
+
+	elif [[ $SCM_name=="bitbucket" ]]; then
+	  SCM_host='bitbucket.org'
+	  SSHConnection_approval_phrase='You can use git to connect to Bitbucket.'
+
 	else
+	  echo "SCM $1 not supported"
+	  exit
+	fi
+
+	local ssh_msg="$(echo "$(ssh -q "git@$SCM_host")")"
+	if [ $(echo $ssh_msg | grep -c "$SSHConnection_approval_phrase" | wc -l) -eq 1 ]; then
+	  echo $ssh_msg
+
+	else
+	  declare file_path="/$(whoami)/.ssh/$2_$3"
+	  declare full_file_path="$file_path.pub"
+
 	  echo "Your SSH key is not configured properly."
 	  echo "Either setup your SCM tool with the content of file $full_file_path or ask your supervisor to do it."
 	fi
 }
 
-resolveSSH () {
-	task='configure ssh'
-	requestApproval $task | read answer
-
-	if [ "$answer" == "y" ]; then		
-		generateSSHKey "id" "rsa"
-		waitUser
-
-		# Test connection
-		testSSHConnection "id" "rsa"
-
-		# Get git e-mail
-		task='git e-mail'
-		requestApproval $task | read answer
-
-		if [ "$answer" == "y" ]; then 
-			getInfo $task
-		fi
-		
-		# Get git name
-		task='git name'
-		requestApproval $task | read answer
-
-		if [ "$answer" == "y" ]; then 
-			getInfo $task
-			configGitMail $?
-		fi
-	fi
+requestGitSCM () {
+	PS3="Enter the number of Source Code Management (SCM) toolkit: "
+	select SCM in github bitbucket quit; do
+		case $SCM in
+		    github)
+		      echo $SCM
+		      break
+		      ;;
+		    bitbucket)
+		      echo $SCM
+		      break
+		      ;;
+		    quit)
+			  echo 'quit'
+		      break
+		      ;;
+		    *) 
+		      echo "Invalid option $REPLY. Available options are [$AVAILABLE_SCM, quit]"
+		      ;;
+		  esac
+	done
 }
 
-configSSH () {
-	local command_='resolveSSH'
-	wrapHeaderFooter "SSH key configuration" $command_
-}
-
-cloneRepository () {
+cloneGitRepository () {
 	local repo_host=''
 	
-	if [[ $1='bitbucket' ]]; then
+	if [[ "$1"="bitbucket" ]]; then
 		repo_host='bitbucket.org'
-	elif [[ $1='github' ]]; then
+	elif [[ "$1"="github" ]]; then
 		repo_host='github.com'
 	fi
 
-	if [[ $repo_host='' ]]; then
-		echo 'SVC $1 not currently supported!'
+	if [[ "$repo_host"='' ]]; then
+		echo 'SCM $1 not currently supported!'
 		exit 0;
 	fi
 
@@ -351,46 +369,183 @@ cloneRepository () {
 	exit 1;
 }
 
-configGitUser () {
-	git config --global user.email "$1"
+requestGitInfoAndCloneGitRepository () {
+	declare SCM_name=""
+	declare organization_name=""
+	declare repository_name=""
+
+	SCM_name="$(getInfo 'SCM [github/bitbucket]')"
+	organization_name="$(getInfo 'organization name ($organizationname/$repositoryname)')"
+	repository_name="$(getInfo 'repository name ($organizationname/$repositoryname)')"
+	
+	cloneGitRepository $SCM_name $organization_name $repository_name
 }
 
-configGitMail () {
-	git config --global user.name "$1"
-}
-
-requestApproval () {
-	local response='n'
+cloneGitRepositories () {
+	local task='clone one more repository'
 
 	while [ true ];
 	do
-		read -p "Do you wish to $1? [y/n/q]: " response
+		requestGitInfoAndCloneGitRepository
 		
-		if [ $response == "y" ]; then
-			local compose_particle='do'
+		local answer="$(echo "$(requestApproval "$task")")"
 
-		elif [ $response == "n" ]; then
-			local compose_particle='do not'
-
-		elif [ $response == "q" ]; then
-			exit 1
-		fi
-
-		read -p "Are you sure you $compose_particle $1? [y/n/q]: " response
-	
-		if [ $response == "y" ]; then
-			break
+		if [ "$answer" == "y" ]; then 
+			continue;
+		elif [ "$answer" == "n" ] || [ "$answer" == "q" ] ; then 
+			break;
 		fi
 	done
+}
 
-	echo $response
+configGlobalGitUsername () {
+	git config --global user.name "$1"
+}
+
+configGlobalGitEMail () {
+	git config --global user.email "$1"
 }
 
 ############################################################
 ############################################################
-# Main program                                             #
+#                                                    	   #
+# Resolve tasks                                        	   #
+#                                                      	   #
 ############################################################
 ############################################################
-preparePackages $1
-# resolveSSH
 
+# Update, upgrade and fix packages
+resolveAPTPackages() {
+	ManageRepositoryPackages 'apt' \
+							 'apt -qq update && apt -qq upgrade -y && apt full-upgrade' \
+							 'apt --fix-broken install' \
+							 'apt autoremove -y'
+}
+
+resolveSnapPackages() {
+	ManageRepositoryPackages 'snap' \
+							 'snap refresh' \
+							 'echo Package manager snap may require manual repare...' \
+							 'snap list --all | \
+							  while read snapname ver rev trk pub notes; \
+							  do if [[ $notes = *disabled* ]]; \
+							  then sudo snap remove "$snapname" --revision="$rev"; \
+							  echo "Package $snapname is removed!"; fi; done; \
+							  echo "All unnecesssary packages were removed."'
+}
+
+resolvePipPackages() {
+	ManageRepositoryPackages 'pip' \
+							 'pip-review --raw | xargs -n1 pip install -U' \
+							 'echo Package manager pip may require manual maintainance...' \
+							 'echo Package manager pip has no autoremove unused packages...'
+}
+
+resolveRepositories () {
+	resolveAPTPackages
+	resolveSnapPackages
+	resolvePipPackages
+}
+
+resolvePackages () {
+	installPackages
+	clearWarnings
+	resolveRepositories
+}
+
+resolveSystemConfig () {
+	# Save tilde as home alias
+	if grep -q "alias ~=/home/$1" /home/$1/.bashrc; 
+	then
+		echo "Home alias is already tilde ~."
+	else
+		echo "alias ~=/home/$1" >> /home/$1/.bashrc
+	fi
+}
+
+resolveGitSSH () {
+	local filename="id" 
+	local file_suffix="rsa"
+
+	local SCM_name="$1"
+
+	echo "The git SSH configuration allows you to"
+	echo "  : generate an SSH key;"
+	echo "  : test SSH connection;"
+	echo "  : set git global e-mail and name properties."
+
+	# Generate SSH key
+	requestApprovalAndEvaluate 'generate SSH key' "generateSSHKey $filename $suffix"
+	
+	# Wait user configure the SSH on its SCM platform
+	echo 
+	echo "In case you generated the SSH, it is available on /$(whoami)/$filename _$file_suffix.pub"
+	echo "Its content is on your clipboard (Ctrl+V on some text field to see it)!"
+	echo 
+	echo "Then, go to your SCM platform (github, bitbucket, gitlab, ...) and setup it in proper place."
+	echo "Otherwise, in case you do not have an available Git SSH key or it is not set on your user SCM $SCM_name account,"
+	echo "the next step will fail."
+	echo 
+
+	waitUser
+
+	# Test connection
+	requestApprovalAndEvaluate 'test SSH connection' "testSSHConnection $SCM_name $filename $file_suffix"
+
+	# Get git e-mail
+	requestApprovalAndEvaluate 'set global git e-mail' 'configGlobalGitEMail `echo $(getInfo "git email")`'
+	
+	# Get git name
+	requestApprovalAndEvaluate 'set global git name' 'configGlobalGitUsername `echo $(getInfo "git name")`'
+}
+
+resolveGit () {
+	local SCM=$(echo $(requestGitSCM))
+	requestApprovalAndEvaluate 'resolve Git SSH connection' "resolveGitSSH $SCM"
+}
+
+############################################################
+############################################################
+#                                                    	   #
+# Prepare tasks                                        	   #
+#                                                      	   #
+############################################################
+############################################################
+
+prepareSystemConfig () {
+	local command_="resolveSystemConfig $1"
+	local task='configure system minors (currently: change home to alias ~)'
+	local title="Minor system configurations"
+	
+	decorateAskAndEval "$title" "$task"  "$command_" 
+}
+
+preparePackages() {
+	local command_="resolvePackages"
+	local task='install packages and manage repositories'
+	local title="Repositories"
+	
+	decorateAskAndEval "$title" "$task"  "$command_" 
+}
+
+prepareGit () {
+	local command_='resolveGit'
+	local task='setup some global git configuration'
+	local title="Git setup"
+
+	decorateAskAndEval "$title" "$task" "$command_"
+}
+
+############################################################
+############################################################
+#                                                      	   #
+# Main program                                             #
+#                                                      	   #
+############################################################
+############################################################
+
+prepareSystemConfig $1
+preparePackages
+prepareGit 
+
+exit 1;
