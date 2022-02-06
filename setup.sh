@@ -1,28 +1,123 @@
 #!/bin/bash
 
-############################################################
-############################################################
-#                                                    	   #
-# Global variables                                         #
-#                                                    	   #
-############################################################
-############################################################
+###################################################################################################
+###################################################################################################
+#                                                                                             	  #
+# Global variables                                                                                #
+#                                                    	                                            #
+###################################################################################################
+###################################################################################################
 
+# Menu max width
 MENU_WIDTH=100
-UPPER_FENCE_MARKER='-'
-LOWER_FENCE_MARKER='-'
-LEFT_FENCE_MARKER='|'
-RIGHT_FENCE_MARKER='|'
-CORNER_MARKER='#'
-AVAILABLE_SCM='github, bucket'
 
-############################################################
-############################################################
-#                                                    	   #
-# Miscelaneous                                        	   #
-#                                                    	   #
-############################################################
-############################################################
+# Fence markers
+# Take a look at: https://waylonwalker.com/drawing-ascii-boxes/
+UPPER_HEADER_MARKER='━'
+LOWER_HEADER_MARKER='━'
+
+LEFT_HEADER_MARKER='┃'
+RIGHT_HEADER_MARKER='┃'
+
+UL_CORNER_MARKER='┏'
+UR_CORNER_MARKER='┓'
+
+BL_CORNER_MARKER='┗'
+BR_CORNER_MARKER='┛'
+
+LOWER_FOOTER_MARKER='━'
+LEFT_FOOTER_CORNER='┗'
+RIGHT_FOOTER_CORNER='┛'
+SPACE_FILLER=' '
+
+# SCM available
+# Take note: lower case names separated by ", "
+AVAILABLE_SCM='github, bucket, gitlab'
+
+# Reset
+Clear='\033[0m'       	  # Text Reset
+
+# Regular Colors
+Black='\033[0;30m'        # Black
+Red='\033[0;31m'          # Red
+Green='\033[0;32m'        # Green
+Yellow='\033[0;33m'       # Yellow
+Blue='\033[0;34m'         # Blue
+Purple='\033[0;35m'       # Purple
+Cyan='\033[0;36m'         # Cyan
+White='\033[0;37m'        # White
+
+# Bold
+BBlack='\033[1;30m'       # Black
+BRed='\033[1;31m'         # Red
+BGreen='\033[1;32m'       # Green
+BYellow='\033[1;33m'      # Yellow
+BBlue='\033[1;34m'        # Blue
+BPurple='\033[1;35m'      # Purple
+BCyan='\033[1;36m'        # Cyan
+BWhite='\033[1;37m'       # White
+
+# Underline
+UBlack='\033[4;30m'       # Black
+URed='\033[4;31m'         # Red
+UGreen='\033[4;32m'       # Green
+UYellow='\033[4;33m'      # Yellow
+UBlue='\033[4;34m'        # Blue
+UPurple='\033[4;35m'      # Purple
+UCyan='\033[4;36m'        # Cyan
+UWhite='\033[4;37m'       # White
+
+# Background
+On_Black='\033[40m'       # Black
+On_Red='\033[41m'         # Red
+On_Green='\033[42m'       # Green
+On_Yellow='\033[43m'      # Yellow
+On_Blue='\033[44m'        # Blue
+On_Purple='\033[45m'      # Purple
+On_Cyan='\033[46m'        # Cyan
+On_White='\033[47m'       # White
+
+# High Intensity
+IBlack='\033[0;90m'       # Black
+IRed='\033[0;91m'         # Red
+IGreen='\033[0;92m'       # Green
+IYellow='\033[0;93m'      # Yellow
+IBlue='\033[0;94m'        # Blue
+IPurple='\033[0;95m'      # Purple
+ICyan='\033[0;96m'        # Cyan
+IWhite='\033[0;97m'       # White
+
+# Bold High Intensity
+BIBlack='\033[1;90m'      # Black
+BIRed='\033[1;91m'        # Red
+BIGreen='\033[1;92m'      # Green
+BIYellow='\033[1;93m'     # Yellow
+BIBlue='\033[1;94m'       # Blue
+BIPurple='\033[1;95m'     # Purple
+BICyan='\033[1;96m'       # Cyan
+BIWhite='\033[1;97m'      # White
+
+# High Intensity backgrounds
+On_IBlack='\033[0;100m'   # Black
+On_IRed='\033[0;101m'     # Red
+On_IGreen='\033[0;102m'   # Green
+On_IYellow='\033[0;103m'  # Yellow
+On_IBlue='\033[0;104m'    # Blue
+On_IPurple='\033[0;105m'  # Purple
+On_ICyan='\033[0;106m'    # Cyan
+On_IWhite='\033[0;107m'   # White
+
+
+# Clear the color after that
+clear='\033[0m'
+
+###################################################################################################
+###################################################################################################
+#                                                    	                                            #
+# Miscelaneous                                        	                                         #
+#                                                    	                    	                    	  #
+###################################################################################################
+###################################################################################################
 
 mod() {
 	return $(($1%$2));
@@ -42,16 +137,20 @@ repeat(){
 	local end=${1:-$1}
 	local str="${2:-$2}"
 	local range=$(seq $start $end)
-	for i in $range ; do echo -n "${str}"; done
+	for i in $range ; do echo -e -n "${str}"; done
 }
 
-############################################################
-############################################################
-#                                                    	   #
-# Interface functions                                      #
-#                                                    	   #
-############################################################
-############################################################
+removeSpaces (){
+	echo "$(echo $1 | sed 's/ //g')"
+}
+
+###################################################################################################
+###################################################################################################
+#                                                    	                                            #
+# Interface functions                                                                             #
+#                                                    	                                            #
+###################################################################################################
+###################################################################################################
 
 # Update, upgrade and fix packages
 waitUser () {
@@ -59,7 +158,7 @@ waitUser () {
    local timeout="${1:-5}"
    
    tput sc
-   echo "Press any key to continue..."
+   echo -e "Press ${URed}any key${Clear} to continue..."
 	
 	while [ true ]
 	do
@@ -70,7 +169,7 @@ waitUser () {
 			return;
 		else
 			tput rc
-			echo "Waiting some key-press since $init_timestamp... it is $(date)"
+			echo -e "Waiting ${URed}some key-press${Clear} since $init_timestamp... it is $(date)"
 		fi
 
 	done
@@ -83,7 +182,7 @@ getInfo () {
 		read -p "Is your $1 $info ? [y/n/q]: " response
 
 		if [ $response == "y" ]; then
-			echo $info
+			echo -e $info
 			return
 
 		elif [ $response == "q" ]; then
@@ -101,25 +200,29 @@ printHeader () {
 	local lower_marker="$4"
 	local left_marker="$5"
 
+	local ul_corner="$6" 
+	local ur_corner="$7"
+	local bl_corner="$8"
+	local br_corner="$9"
+
 	local len_upper_marker=${#upper_marker}
 	local len_right_marker=${#right_marker}
 	local len_lower_marker=${#lower_marker}
 	local len_left_marker=${#left_marker}
 
+	# Print menu with number of characters equal to terminal charsize  
 	if [[ $(tput cols) -lt $(($line_length+2+$len_left_marker+ $len_right_marker)) ]]; then
 		line_length=$(($(tput cols)- 2 -$len_left_marker-$len_right_marker))
 	fi
 
-	local corner_marker="$6"
-
 	# Upper fence
-	local upper_fence="$corner_marker$(repeat $line_length $upper_marker)$corner_marker"
+	local upper_fence="$ul_corner$(repeat $line_length $upper_marker)$ur_corner"
 	
 	# Upper indentation
 	local upper_space="$left_marker $(repeat $(($line_length-1-$len_left_marker)) " ") $right_marker"
 	
 	# Lower fence
-	local lower_fence="$corner_marker$(repeat $line_length $lower_marker)$corner_marker"
+	local lower_fence="$bl_corner$(repeat $line_length $lower_marker)$br_corner"
 
 	# Upper indentation
 	local lower_space="$upper_space"
@@ -167,41 +270,45 @@ requestApproval () {
 
 	while [ true ];
 	do
-		read -p "Do you wish to $1? [y/n/q]: " response
+		local available_responses="[${BGreen}y${Clear}/${BRed}n${Clear}/q]"
+		read -p "$(echo -e "Do you wish to ${BBlue}$1${Clear}? $available_responses:")" response
 		
 		final_response="$response"
-		
+		echo "$final_response"
+
+		local confirmation_tokens="[${BGreen}y${Clear}/${BRed}n${Clear}]: "
 		if [ $response == "y" ]; then
-			local compose_phrase="do want to $1? [y/n]: "
+			local compose_phrase="do want to ${BBlue}$1${Clear}? $confirmation_tokens"
 
 		elif [ $response == "n" ]; then
-			local compose_phrase="do not want to $1? [y/n]: "
+			local compose_phrase="do not want to ${BBlue}$1${Clear}? $confirmation_tokens: "
 
 		elif [ $response == "q" ]; then
-			local compose_phrase="want to quit? [y/n]: "
+			local compose_phrase="want to quit ${BBlue}$1${Clear}? $confirmation_tokens: "
 		fi
 
 		local confirmation="Are you sure you $compose_phrase"
-		read -p "$confirmation" confirmation_response
+		read -p "$(echo -e "$confirmation")" confirmation_response
 
 		if [ $confirmation_response == "y" ]; then
 			break
 		elif [ $confirmation_response == "n" ]; then
 			continue
 		else
-			echo "The response \"$confirmation_response\" is not valid! THe valid responses are \"y\" or \"n\""
+			echo -e "The response ${BYellow}\"$confirmation_response\"${Clear} is not valid!" 
+			echo -e "The valid responses are ${BGreen}\"y\"${Clear} or ${BRed}\"n\"${Clear}"
 		fi
 	done
 
-	echo $final_response
+	echo -e $final_response
 }
 
 requestApprovalAndEvaluate () {
 	local task=$1
 
-	echo 
-	local answer="$(echo "$(requestApproval "$task")")"
-	echo 
+	echo
+	local answer="$(echo -e "$(requestApproval "$task")")"
+	echo -e 
 
 	if [ "$answer" == "y" ]; then
 		echo 
@@ -217,20 +324,20 @@ decorateAskAndEval () {
 installPackage(){
 	if [ $2 -eq 1 ];
 	then
-	  echo "$4 package \"$1\" is already installed!"
+	  echo -e "${BGreen}$4 package \"$1\" is already installed!${Clear}"
 	else
 	  eval $3
-	  echo "$4 \"$1\" was not installed. It is installed now!"
+	  echo -e "${BRed}$4 \"$1\" was not installed.${Clear} ${BGreen}It is installed now!${Clear}"
 	fi
 }
 
-############################################################
-############################################################
-#                                                    	   #
-# Necessary functions                                      #
-#                                                    	   #
-############################################################
-############################################################
+###################################################################################################
+###################################################################################################
+#                                                    	                                     	     #
+# Necessary functions                                                                             #
+#                                                    	                                     	     #
+###################################################################################################
+###################################################################################################
 
 # Install useful utils from different package repositories
 installPackages() {	
@@ -311,41 +418,47 @@ testSSHConnection () {
 	  SSHConnection_approval_phrase='You can use git to connect to Bitbucket.'
 
 	else
-	  echo "SCM $1 not supported"
+	  echo -e "SCM $1 not supported"
 	  exit
 	fi
 
-	local ssh_msg="$(echo "$(ssh -q "git@$SCM_host")")"
-	if [ $(echo $ssh_msg | grep -c "$SSHConnection_approval_phrase" | wc -l) -eq 1 ]; then
-	  echo $ssh_msg
+	local ssh_msg="${BGreen}$(echo -e "$(ssh -q "git@$SCM_host")")${Clear}"
+	if [ $(echo -e $ssh_msg | grep -c "$SSHConnection_approval_phrase" | wc -l) -eq 1 ]; then
+	  echo -e $ssh_msg
 
 	else
 	  declare file_path="/$(whoami)/.ssh/$2_$3"
 	  declare full_file_path="$file_path.pub"
 
-	  echo "Your SSH key is not configured properly."
-	  echo "Either setup your SCM tool with the content of file $full_file_path or ask your supervisor to do it."
+	  echo -e "${BRed}Your SSH key is not configured properly.${Clear}"
+	  echo -e "${BRed}Either setup your SCM tool with the content of file $full_file_path${Clear}" 
+	  echo -e "${BRed}or ask your supervisor to do it.${Clear}"
 	fi
 }
 
 requestGitSCM () {
 	PS3="Enter the number of Source Code Management (SCM) toolkit: "
-	select SCM in github bitbucket quit; do
+	select SCM in github bitbucket gitlab quit; do
 		case $SCM in
 		    github)
-		      echo $SCM
+		      echo -e $SCM
 		      break
 		      ;;
 		    bitbucket)
-		      echo $SCM
+		      echo -e $SCM
+		      break
+		      ;;
+		    gitlab)
+		      echo -e $SCM
 		      break
 		      ;;
 		    quit)
-			  echo 'quit'
+			  echo -e 'quit'
 		      break
 		      ;;
-		    *) 
-		      echo "Invalid option $REPLY. Available options are [$AVAILABLE_SCM, quit]"
+		    *)
+		      echo -e "${BRed}Invalid option $REPLY.$Clear" 
+		      echo -e "${BRed}Available options are [$AVAILABLE_SCM, quit]${Clear}"
 		      ;;
 		  esac
 	done
@@ -358,10 +471,12 @@ cloneGitRepository () {
 		repo_host='bitbucket.org'
 	elif [[ "$1"="github" ]]; then
 		repo_host='github.com'
+	elif [[ "$1"="gitlab" ]]; then
+		repo_host='gitlab.com'
 	fi
 
 	if [[ "$repo_host"='' ]]; then
-		echo 'SCM $1 not currently supported!'
+		echo -e "${BRed}SCM $1 not currently supported!${Clear}"
 		exit 0;
 	fi
 
@@ -406,13 +521,13 @@ configGlobalGitEMail () {
 	git config --global user.email "$1"
 }
 
-############################################################
-############################################################
-#                                                    	   #
-# Resolve tasks                                        	   #
-#                                                      	   #
-############################################################
-############################################################
+###################################################################################################
+###################################################################################################
+#                                                    	                                            #
+# Resolve tasks                                        	                                         #
+#                                                      	                                         #
+###################################################################################################
+###################################################################################################
 
 # Update, upgrade and fix packages
 resolveAPTPackages() {
@@ -469,48 +584,53 @@ resolveGitSSH () {
 
 	local SCM_name="$1"
 
-	echo "The git SSH configuration allows you to"
-	echo "  : generate an SSH key;"
-	echo "  : test SSH connection;"
-	echo "  : set git global e-mail and name properties."
+	echo -e "The git SSH configuration allows you to"
+	echo -e "  : generate an SSH key;"
+	echo -e "  : test SSH connection;"
+	echo -e "  : set git global e-mail and name properties."
 
 	# Generate SSH key
 	requestApprovalAndEvaluate 'generate SSH key' "generateSSHKey $filename $suffix"
 	
 	# Wait user configure the SSH on its SCM platform
-	echo 
-	echo "In case you generated the SSH, it is available on /$(whoami)/$filename _$file_suffix.pub"
-	echo "Its content is on your clipboard (Ctrl+V on some text field to see it)!"
-	echo 
-	echo "Then, go to your SCM platform (github, bitbucket, gitlab, ...) and setup it in proper place."
-	echo "Otherwise, in case you do not have an available Git SSH key or it is not set on your user SCM $SCM_name account,"
-	echo "the next step will fail."
+	echo
+	echo -e "In case you generated the SSH, it is available on /$(whoami)/$filename _$file_suffix.pub"
+	echo -e "Its content is on your clipboard (Ctrl+V on some text field to see it)!"
+	echo
+	echo -e "Then, go to your SCM platform (github, bitbucket, gitlab, ...) \
+				and setup it in proper place."
+	echo -e "Otherwise, in case you do not have an available Git SSH key "
+	echo -e "or it is not set on your user SCM $SCM_name account,"
+	echo -e "the next step will fail."
 	echo 
 
 	waitUser
 
 	# Test connection
-	requestApprovalAndEvaluate 'test SSH connection' "testSSHConnection $SCM_name $filename $file_suffix"
+	requestApprovalAndEvaluate 'test SSH connection' \
+										"testSSHConnection $SCM_name $filename $file_suffix"
 
 	# Get git e-mail
-	requestApprovalAndEvaluate 'set global git e-mail' 'configGlobalGitEMail `echo $(getInfo "git email")`'
+	requestApprovalAndEvaluate 'set global git e-mail' \
+										'configGlobalGitEMail `echo -e $(getInfo "git email")`'
 	
 	# Get git name
-	requestApprovalAndEvaluate 'set global git name' 'configGlobalGitUsername `echo $(getInfo "git name")`'
+	requestApprovalAndEvaluate 'set global git name' \
+										'configGlobalGitUsername `echo -e $(getInfo "git name")`'
 }
 
 resolveGit () {
-	local SCM=$(echo $(requestGitSCM))
+	local SCM=$(echo -e $(requestGitSCM))
 	requestApprovalAndEvaluate 'resolve Git SSH connection' "resolveGitSSH $SCM"
 }
 
-############################################################
-############################################################
-#                                                    	   #
-# Prepare tasks                                        	   #
-#                                                      	   #
-############################################################
-############################################################
+###################################################################################################
+###################################################################################################
+#                                                    	                                            #
+# Prepare tasks                                        	                                         #
+#                                                      	                                         #
+###################################################################################################
+###################################################################################################
 
 prepareSystemConfig () {
 	local command_="resolveSystemConfig $1"
@@ -536,16 +656,18 @@ prepareGit () {
 	decorateAskAndEval "$title" "$task" "$command_"
 }
 
-############################################################
-############################################################
-#                                                      	   #
-# Main program                                             #
-#                                                      	   #
-############################################################
-############################################################
+###################################################################################################
+###################################################################################################
+#                                                                                                 #
+# Main program                                                                                    #
+#                                                                                                 #
+###################################################################################################
+###################################################################################################
 
-prepareSystemConfig $1
-preparePackages
-prepareGit 
+# prepareSystemConfig $1
+# preparePackages
+# prepareGit 
+
+wrapHeaderFooter 'Test title' 'echo Hello World'
 
 exit 1;
