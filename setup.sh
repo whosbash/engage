@@ -192,6 +192,20 @@ getInfo () {
 	done
 }
 
+wrapHeaderFooter () {
+	printHeader $MENU_WIDTH \
+			 		$UPPER_HEADER_MARKER $RIGHT_HEADER_MARKER \
+				 	$LOWER_HEADER_MARKER $LEFT_HEADER_MARKER \
+				 	$UL_CORNER_MARKER $UR_CORNER_MARKER \
+				 	$BL_CORNER_MARKER $BR_CORNER_MARKER \
+				 	"$1"
+	echo 
+	eval "$2"
+	echo 
+
+	printFooter $MENU_WIDTH $LOWER_FOOTER_MARKER $LEFT_FOOTER_CORNER $RIGHT_FOOTER_CORNER	
+}
+
 printHeader () {
 	declare -i line_length=$1
 	
@@ -233,36 +247,22 @@ printHeader () {
 
 	# Complete line with dots and a pipe
 	local res="$line_length-length-1-$len_left_marker"
-	local dot_line="$(repeat $line_length "."; echo)"
+	local filler="$(repeat $line_length "$SPACE_FILLER"; echo -e)"
 	
 	local arg_0='$0'
-	local arg_1="substr(\"$dot_line\", 1, rest)"
+	local arg_1="substr(\"$filler\", 1, rest)"
 	
 	local fill_command="{rest=($res); printf \"$right_marker %s%s $left_marker\n\", $arg_0, $arg_1}"
 
-	echo "$upper_fence"
-	echo "$upper_space" 
-	sed -r -e "$regex_counter" <<< $7 | sed -r "$regex_trimmer" | awk "$fill_command"
-	echo "$lower_space"
-	echo "$lower_fence"
+	echo -e "$upper_fence"
+	echo -e "$upper_space" 
+	sed -r -e "$regex_counter" <<< ${10} | sed -r "$regex_trimmer" | awk "$fill_command"
+	echo -e "$lower_space"
+	echo -e "$lower_fence"
 }
 
 printFooter () {
-	echo "$3$(repeat $1 $2)$3"
-}
-
-wrapHeaderFooter () {
-	printHeader $MENU_WIDTH \
-			 	$UPPER_FENCE_MARKER $RIGHT_FENCE_MARKER \
-				 $LOWER_FENCE_MARKER $LEFT_FENCE_MARKER \
-				 $CORNER_MARKER \
-				 "$1"
-	
-	echo 
-	eval "$2"
-	echo
-
-	printFooter $MENU_WIDTH $LOWER_FENCE_MARKER $CORNER_MARKER	
+	echo -e "$LEFT_FOOTER_CORNER$(repeat $1 $2)$RIGHT_FOOTER_CORNER"
 }
 
 requestApproval () {
@@ -346,10 +346,11 @@ installPackages() {
 
 	# apt-get
 	for package in git python3-dev python3-pip python3-venv python3-apt \
-				   virtualenv ipe xclip google-chrome-stable
+				   	virtualenv ipe xclip google-chrome-stable texlive-xetex \
+				   	texlive-fonts-recommended texlive-plain-generic
 	do
 		is_installed=$(dpkg-query -W -f='${Status}' $package | grep -c "ok installed")
-		install_command="apt install $package -y;"
+		install_command="apt install --upgrade $package -y;"
 		
 		installPackage $package $is_installed "$install_command" 'apt'
 	done
@@ -375,9 +376,11 @@ installPackages() {
 
 # Update, upgrade and fix packages
 ManageRepositoryPackages () {
-	wrapHeaderFooter "Repository $1: Update and upgrade current packages." "$2"
-	wrapHeaderFooter "Repository $1: Fix current packages." "$3"
-	wrapHeaderFooter "Repository $1: Remove unnecessary packages." "$4"
+	local head="Repository ${BBlack}$1${Clear}:" 
+
+	wrapHeaderFooter "$head Update and upgrade current packages." "$2"
+	wrapHeaderFooter "$head Fix current packages." "$3"
+	wrapHeaderFooter "$head Remove unnecessary packages." "$4"
 }
 
 clearWarnings () {
@@ -401,7 +404,7 @@ generateSSHKey () {
 	# Agent
 	ssh-add $file_path
 
-	xclip -sel clip < $full_file_path	
+	xclip -sel clip < $full_file_path
 }
 
 testSSHConnection () {
@@ -503,7 +506,7 @@ cloneGitRepositories () {
 	do
 		requestGitInfoAndCloneGitRepository
 		
-		local answer="$(echo "$(requestApproval "$task")")"
+		local answer="$(echo -e "$(requestApproval "$task")")"
 
 		if [ "$answer" == "y" ]; then 
 			continue;
@@ -540,20 +543,20 @@ resolveAPTPackages() {
 resolveSnapPackages() {
 	ManageRepositoryPackages 'snap' \
 							 'snap refresh' \
-							 'echo Package manager snap may require manual repare...' \
+							 'echo -e Package manager snap may require manual repare...' \
 							 'snap list --all | \
 							  while read snapname ver rev trk pub notes; \
 							  do if [[ $notes = *disabled* ]]; \
 							  then sudo snap remove "$snapname" --revision="$rev"; \
-							  echo "Package $snapname is removed!"; fi; done; \
-							  echo "All unnecesssary packages were removed."'
+							  echo -e "Package $snapname is removed!"; fi; done; \
+							  echo -e "All unnecesssary packages were removed."'
 }
 
 resolvePipPackages() {
 	ManageRepositoryPackages 'pip' \
 							 'pip-review --raw | xargs -n1 pip install -U' \
-							 'echo Package manager pip may require manual maintainance...' \
-							 'echo Package manager pip has no autoremove unused packages...'
+							 'echo -e Package manager pip may require manual maintainance...' \
+							 'echo -e Package manager pip has no autoremove unused packages...'
 }
 
 resolveRepositories () {
@@ -572,9 +575,9 @@ resolveSystemConfig () {
 	# Save tilde as home alias
 	if grep -q "alias ~=/home/$1" /home/$1/.bashrc; 
 	then
-		echo "Home alias is already tilde ~."
+		echo -e "Home alias is already tilde ~."
 	else
-		echo "alias ~=/home/$1" >> /home/$1/.bashrc
+		echo -e "alias ~=/home/$1" >> /home/$1/.bashrc
 	fi
 }
 
