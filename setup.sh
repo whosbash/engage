@@ -25,10 +25,14 @@ UR_CORNER_MARKER='┓'
 BL_CORNER_MARKER='┗'
 BR_CORNER_MARKER='┛'
 
+HEADER_COLOR='BBlue'
+
 LOWER_FOOTER_MARKER='━'
 LEFT_FOOTER_CORNER='┗'
 RIGHT_FOOTER_CORNER='┛'
 SPACE_FILLER=' '
+
+FOOTER_COLOR=$HEADER_COLOR
 
 # SCM available
 # Take note: lower case names separated by ", "
@@ -46,6 +50,13 @@ Blue='\033[0;34m'         # Blue
 Purple='\033[0;35m'       # Purple
 Cyan='\033[0;36m'         # Cyan
 White='\033[0;37m'        # White
+
+# Unusual colors
+Lime_yellow=$(tput setaf 190)
+Powder_blue=$(tput setaf 153)
+Bright=$(tput bold)
+Blink=$(tput blink)
+Reverse=$(tput smso)
 
 # Bold
 BBlack='\033[1;30m'       # Black
@@ -144,6 +155,10 @@ removeSpaces (){
 	echo "$(echo $1 | sed 's/ //g')"
 }
 
+removeColors (){
+	echo "$(printf "$1" | ansi2txt | col -b)"
+}
+
 ###################################################################################################
 ###################################################################################################
 #                                                    	                                            #
@@ -178,8 +193,8 @@ waitUser () {
 getInfo () {
 	while [ true ];
 	do
-		read -p "Type your $1: " info
-		read -p "Is your $1 $info ? [y/n/q]: " response
+		read -p "Type your ${BBlue}$1${Clear}: " info
+		read -p "Is your ${IBlue}$1${Clear} ${BBlue}$info${Clear} ? [y/n/q]: " response
 
 		if [ $response == "y" ]; then
 			echo -e $info
@@ -219,6 +234,8 @@ printHeader () {
 	local bl_corner="$8"
 	local br_corner="$9"
 
+	local box_title=${10}
+
 	local len_upper_marker=${#upper_marker}
 	local len_right_marker=${#right_marker}
 	local len_lower_marker=${#lower_marker}
@@ -233,7 +250,8 @@ printHeader () {
 	local upper_fence="$ul_corner$(repeat $line_length $upper_marker)$ur_corner"
 	
 	# Upper indentation
-	local upper_space="$left_marker $(repeat $(($line_length-1-$len_left_marker)) " ") $right_marker"
+	local repeat_space=$(($line_length-1-$len_left_marker))
+	local upper_space="$left_marker $(repeat $repeat_space " ") $right_marker"
 	
 	# Lower fence
 	local lower_fence="$bl_corner$(repeat $line_length $lower_marker)$br_corner"
@@ -247,16 +265,24 @@ printHeader () {
 
 	# Complete line with dots and a pipe
 	local res="$line_length-length-1-$len_left_marker"
-	local filler="$(repeat $line_length "$SPACE_FILLER"; echo -e)"
+	local filler="$(repeat $line_length "$SPACE_FILLER"; echo)"
 	
 	local arg_0='$0'
 	local arg_1="substr(\"$filler\", 1, rest)"
-	
 	local fill_command="{rest=($res); printf \"$right_marker %s%s $left_marker\n\", $arg_0, $arg_1}"
+
+	local uncolored_title="$(echo $(removeColors "$box_title"))"
+	
+	local uncolored_row="$(echo -e "$uncolored_title" | \
+					   	     sed -r "$regex_counter" | \
+					   	     sed -r "$regex_trimmer" | \
+					   	     awk "$fill_command")"
+	
+	local colored_title="$(echo "$uncolored_row" | sed "s/$uncolored_title/`printf "$box_title"`/g")"
 
 	echo -e "$upper_fence"
 	echo -e "$upper_space" 
-	sed -r -e "$regex_counter" <<< ${10} | sed -r "$regex_trimmer" | awk "$fill_command"
+	echo -e "$colored_title"
 	echo -e "$lower_space"
 	echo -e "$lower_fence"
 }
@@ -300,15 +326,15 @@ requestApproval () {
 		fi
 	done
 
-	echo -e $final_response
+	echo $final_response
 }
 
 requestApprovalAndEvaluate () {
 	local task=$1
 
 	echo
-	local answer="$(echo -e "$(requestApproval "$task")")"
-	echo -e 
+	local answer="$(echo "$(requestApproval "$task")")"
+	echo
 
 	if [ "$answer" == "y" ]; then
 		echo 
