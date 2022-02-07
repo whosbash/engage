@@ -300,7 +300,6 @@ requestApproval () {
 		read -p "$(echo -e "Do you wish to ${BBlue}$1${Clear}? $available_responses:")" response
 		
 		final_response="$response"
-		echo "$final_response"
 
 		local confirmation_tokens="[${BGreen}y${Clear}/${BRed}n${Clear}]: "
 		if [ $response == "y" ]; then
@@ -373,7 +372,7 @@ installPackages() {
 	# apt-get
 	for package in git python3-dev python3-pip python3-venv python3-apt \
 				   	virtualenv ipe xclip google-chrome-stable texlive-xetex \
-				   	texlive-fonts-recommended texlive-plain-generic
+				   	texlive-fonts-recommended texlive-plain-generic npm
 	do
 		is_installed=$(dpkg-query -W -f='${Status}' $package | grep -c "ok installed")
 		install_command="apt install --upgrade $package -y;"
@@ -391,7 +390,7 @@ installPackages() {
 	done
 
 	# pip
-	for package in numpy pandas matplotlib scipy scikit-learn notebook pip-review
+	for package in numpy pandas matplotlib scipy scikit-learn notebook pip-review strip-ansi
 	do
 		is_installed=$(("$(pip freeze | grep -c $package)" > "0"))
 		install_command="pip install $package"
@@ -402,11 +401,11 @@ installPackages() {
 
 # Update, upgrade and fix packages
 ManageRepositoryPackages () {
-	local head="Repository ${BBlack}$1${Clear}:" 
+	local head="Repository ${BBlue}$1${Clear}:" 
 
-	wrapHeaderFooter "$head Update and upgrade current packages." "$2"
-	wrapHeaderFooter "$head Fix current packages." "$3"
-	wrapHeaderFooter "$head Remove unnecessary packages." "$4"
+	wrapHeaderFooter "`echo -e $head` Update and upgrade current packages." "$2"
+	wrapHeaderFooter "`echo -e $head` Fix current packages." "$3"
+	wrapHeaderFooter "`echo -e $head` Remove unnecessary packages." "$4"
 }
 
 clearWarnings () {
@@ -498,8 +497,10 @@ cloneGitRepository () {
 	
 	if [[ "$1"="bitbucket" ]]; then
 		repo_host='bitbucket.org'
+
 	elif [[ "$1"="github" ]]; then
 		repo_host='github.com'
+
 	elif [[ "$1"="gitlab" ]]; then
 		repo_host='gitlab.com'
 	fi
@@ -693,10 +694,8 @@ prepareGit () {
 ###################################################################################################
 ###################################################################################################
 
-# prepareSystemConfig $1
-# preparePackages
-# prepareGit 
-
-wrapHeaderFooter 'Test title' 'echo Hello World'
+prepareSystemConfig $1
+preparePackages
+prepareGit 
 
 exit 1;
