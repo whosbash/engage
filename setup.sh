@@ -113,7 +113,8 @@ UR_CORNER_MARKER='┓'
 BL_CORNER_MARKER='┗'
 BR_CORNER_MARKER='┛'
 
-HEADER_COLOR="${BYellow}"
+HEADER_COLOR="${Purple}"
+REPO_COLOR="${BBlue}"
 
 LOWER_FOOTER_MARKER='━'
 LEFT_FOOTER_CORNER='┗'
@@ -462,7 +463,7 @@ managePackages() {
 }
 
 # Update, upgrade and fix packages
-ManageRepository () {
+manageRepository () {
 	local head="Repository ${BBlue}$1${Clear}:" 
 
 	wrapHeaderFooter "`echo -e $head` Update and upgrade current packages." "$2"
@@ -631,19 +632,18 @@ addExternalRepositories () {
 	local import_repo_commands="$import_repo_command_1"
 
 	wrapHeaderFooter "Import external repositories" "$import_repo_commands"
-
 }
 
 # Update, upgrade and fix packages
 resolveAPTRepository() {
-	ManageRepository 'apt' \
+	manageRepository 'apt' \
 						  'apt -qq update && apt -qq upgrade -y && apt full-upgrade' \
 						  'apt --fix-broken install' \
 						  'apt autoremove -y'
 }
 
 resolveSnapRepository() {
-	ManageRepository 	'snap' \
+	manageRepository 	'snap' \
 						  	'snap refresh' \
 							'echo -e Package manager snap may require manual repare...' \
 							'snap list --all | \
@@ -655,7 +655,7 @@ resolveSnapRepository() {
 }
 
 resolvePipRepository() {
-	ManageRepository 'pip' \
+	manageRepository 'pip' \
 						  'pip-review --raw | xargs -n1 pip install -U' \
 						  'pipconflictchecker' \
 						  'echo -e Package manager pip has no autoremove unused packages...'
