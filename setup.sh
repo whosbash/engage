@@ -389,43 +389,80 @@ decorateAskAndEval () {
 ###################################################################################################
 ###################################################################################################
 
-# Install useful utils from different package repositories
-installPackages() {	
-	local is_installed=0
-	local install_command=''
-
-	# apt-get
-	for package in git python3-dev python3-pip python3-venv python3-apt \
-				   	virtualenv ipe xclip google-chrome-stable texlive-xetex \
-				   	texlive-fonts-recommended texlive-plain-generic npm
-	do
-		is_installed=$(dpkg-query -W -f='${Status}' $package | grep -c "ok installed")
-		install_command="apt install --upgrade $package -y;"
-		
-		installPackage $package $is_installed "$install_command" 'apt'
-	done
+installPackage(){
+	local repository=$1
+	local package=$2
+	local is_installed="$(eval "echo \"$3\"")"
+	local install_command=$4
 	
-	# snap
-	for package in slack sublime-text gimp
+	if [ $is_installed -eq 1 ];
+	then
+	  echo -e "$repository package ${BWhite}\"$package\"${Clear} is ${BGreen}installed${Clear}!"
+	
+	else
+	  eval "$install_command"
+	  echo -e "$repository package ${BWhite}\"$package\"${Clear} was not installed. It is ${BGreen}installed${Clear} now!"
+	fi
+}
+
+installPackages () {
+	local repository="$1";
+	local packages="$2";
+	local is_installed="$3";
+	local install_command="$4";
+
+	for package in ${packages[@]}
 	do
-		is_installed=$(("$(snap list | grep -c $package)" > "0"))
-		install_command="snap install $package --classic"
-
-		installPackage $package $is_installed "$install_command" 'snap'
-	done
-
-	# pip
-	for package in numpy pandas matplotlib scipy scikit-learn notebook pip-review strip-ansi
-	do
-		is_installed=$(("$(pip freeze | grep -c $package)" > "0"))
-		install_command="pip install $package"
-
-		installPackage $package $is_installed "$install_command" 'pip'
+		full_is_installed="$(sed "s/package_name/$package/g" <<< "$is_installed")"
+		full_install_command="$(sed "s/package_name/$package/g" <<< "$install_command")"
+		
+		installPackage "$repository" "$package" "$full_is_installed" "$full_install_command"
 	done
 }
 
+# Install useful utils from different package repositories
+managePackages() {	
+	local is_installed=0
+	local install_command=''
+
+	# Repository apt
+	local pkg_bundle_1='git python3-dev python3-pip python3-venv python3-apt'
+	local pkg_bundle_2='virtualenv ipe xclip google-chrome-stable texlive-xetex'
+	local pkg_bundle_3='texlive-fonts-recommended texlive-plain-generic npm chromium'
+
+	local packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3"
+
+	local param="'$(echo '${Status}')'"
+	local head='$(dpkg-query -W -f='
+	local tail=' package_name | grep -c "ok installed")'
+	local is_installed="$head$param$tail"
+
+	installPackages 'apt' "$packages" \
+						 "$is_installed" \
+						 'apt install --upgrade package_name -y'
+	echo 
+
+	# Repository snap
+	installPackages 'apt' 'slack sublime-text gimp' \
+						 '$(("$(snap list | grep -c package_name)" > "0"))' \
+						 'snap install package_name --classic'   
+	echo 
+
+	# Repository pip
+	local pkg_bundle_1='numpy pandas matplotlib scipy scikit-learn'
+	local pkg_bundle_2='notebook pip-review pip-conflict-checker'
+	local pkg_bundle_3='nbconvert[webpdf]'
+	
+	local packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3"
+
+	installPackages 'snap' "$packages" \
+						 '$(("$(pip freeze | grep -c package_name)" > "0"))' \
+						 'pip install package_name'
+	echo
+}
+
 # Update, upgrade and fix packages
-ManageRepositoryPackages () {
+ManageRepository () {
 	local head="Repository ${BBlue}$1${Clear}:" 
 
 	wrapHeaderFooter "`echo -e $head` Update and upgrade current packages." "$2"
@@ -433,9 +470,13 @@ ManageRepositoryPackages () {
 	wrapHeaderFooter "`echo -e $head` Remove unnecessary packages." "$4"
 }
 
-clearWarnings () {
+removeDuplicates () {
 	chmod a+x aptsources-cleanup.pyz
 	./aptsources-cleanup.pyz
+}
+
+manageDuplicates () {
+	wrapHeaderFooter "Remove package duplicates" "removeDuplicates"
 }
 
 generateSSHKey () {
@@ -491,7 +532,7 @@ testSSHConnection () {
 
 requestGitSCM () {
 	PS3="Enter the number of Source Code Management (SCM) toolkit: "
-	select SCM in github bitbucket gitlab quit; do
+	select SCM in ${AVAILABLE_SCM[@]}; do
 		case $SCM in
 		    github)
 		      echo -e $SCM
@@ -584,43 +625,54 @@ configGlobalGitEMail () {
 ###################################################################################################
 ###################################################################################################
 
+# Repositories
+addExternalRepositories () {
+	local import_repo_command_1='add-apt-repository ppa:xtradeb/apps'
+	local import_repo_commands="$import_repo_command_1"
+
+	wrapHeaderFooter "Import external repositories" "$import_repo_commands"
+
+}
+
 # Update, upgrade and fix packages
-resolveAPTPackages() {
-	ManageRepositoryPackages 'apt' \
-							 'apt -qq update && apt -qq upgrade -y && apt full-upgrade' \
-							 'apt --fix-broken install' \
-							 'apt autoremove -y'
+resolveAPTRepository() {
+	ManageRepository 'apt' \
+						  'apt -qq update && apt -qq upgrade -y && apt full-upgrade' \
+						  'apt --fix-broken install' \
+						  'apt autoremove -y'
 }
 
-resolveSnapPackages() {
-	ManageRepositoryPackages 'snap' \
-							 'snap refresh' \
-							 'echo -e Package manager snap may require manual repare...' \
-							 'snap list --all | \
-							  while read snapname ver rev trk pub notes; \
-							  do if [[ $notes = *disabled* ]]; \
-							  then sudo snap remove "$snapname" --revision="$rev"; \
-							  echo -e "Package $snapname is removed!"; fi; done; \
-							  echo -e "All unnecesssary packages were removed."'
+resolveSnapRepository() {
+	ManageRepository 	'snap' \
+						  	'snap refresh' \
+							'echo -e Package manager snap may require manual repare...' \
+							'snap list --all | \
+							 while read snapname ver rev trk pub notes; \
+							 do if [[ $notes = *disabled* ]]; \
+							 then sudo snap remove "$snapname" --revision="$rev"; \
+							 echo -e "Package $snapname is removed!"; fi; done; \
+							 echo -e "All unnecesssary packages were removed."'
 }
 
-resolvePipPackages() {
-	ManageRepositoryPackages 'pip' \
-							 'pip-review --raw | xargs -n1 pip install -U' \
-							 'echo -e Package manager pip may require manual maintainance...' \
-							 'echo -e Package manager pip has no autoremove unused packages...'
+resolvePipRepository() {
+	ManageRepository 'pip' \
+						  'pip-review --raw | xargs -n1 pip install -U' \
+						  'pipconflictchecker' \
+						  'echo -e Package manager pip has no autoremove unused packages...'
 }
 
 resolveRepositories () {
-	resolveAPTPackages
-	resolveSnapPackages
-	resolvePipPackages
+	addExternalRepositories
+
+	resolveAPTRepository
+	resolveSnapRepository
+	resolvePipRepository
 }
 
-resolvePackages () {
-	installPackages
-	clearWarnings
+resolvePackages () { 
+	managePackages
 	resolveRepositories
+	manageDuplicates
 }
 
 resolveSystemConfig () {
