@@ -3,40 +3,10 @@
 ###################################################################################################
 ###################################################################################################
 #                                                                                             	  #
-# Global variables                                                                                #
+# Colors and styles                                                                               #
 #                                                    	                                            #
 ###################################################################################################
 ###################################################################################################
-
-# Menu max width
-MENU_WIDTH=100
-
-# Fence markers
-# Take a look at: https://waylonwalker.com/drawing-ascii-boxes/
-UPPER_HEADER_MARKER='━'
-LOWER_HEADER_MARKER='━'
-
-LEFT_HEADER_MARKER='┃'
-RIGHT_HEADER_MARKER='┃'
-
-UL_CORNER_MARKER='┏'
-UR_CORNER_MARKER='┓'
-
-BL_CORNER_MARKER='┗'
-BR_CORNER_MARKER='┛'
-
-HEADER_COLOR='BBlue'
-
-LOWER_FOOTER_MARKER='━'
-LEFT_FOOTER_CORNER='┗'
-RIGHT_FOOTER_CORNER='┛'
-SPACE_FILLER=' '
-
-FOOTER_COLOR=$HEADER_COLOR
-
-# SCM available
-# Take note: lower case names separated by ", "
-AVAILABLE_SCM='github, bucket, gitlab'
 
 # Reset
 Clear='\033[0m'       	  # Text Reset
@@ -118,14 +88,48 @@ On_IPurple='\033[0;105m'  # Purple
 On_ICyan='\033[0;106m'    # Cyan
 On_IWhite='\033[0;107m'   # White
 
+###################################################################################################
+###################################################################################################
+#                                                                                             	  #
+# GLobal variables                                                                                #
+#                                                    	                                            #
+###################################################################################################
+###################################################################################################
 
-# Clear the color after that
-clear='\033[0m'
+# Menu max width
+MENU_WIDTH=100
+
+# Fence markers
+# Take a look at: https://waylonwalker.com/drawing-ascii-boxes/
+UPPER_HEADER_MARKER='━'
+LOWER_HEADER_MARKER='━'
+
+LEFT_HEADER_MARKER='┃'
+RIGHT_HEADER_MARKER='┃'
+
+UL_CORNER_MARKER='┏'
+UR_CORNER_MARKER='┓'
+
+BL_CORNER_MARKER='┗'
+BR_CORNER_MARKER='┛'
+
+HEADER_COLOR="${BYellow}"
+
+LOWER_FOOTER_MARKER='━'
+LEFT_FOOTER_CORNER='┗'
+RIGHT_FOOTER_CORNER='┛'
+SPACE_FILLER=' '
+
+FOOTER_COLOR=$HEADER_COLOR
+
+# SCM available
+# Take note: lower case names separated by ", "
+AVAILABLE_SCM='github bucket gitlab'
 
 ###################################################################################################
 ###################################################################################################
 #                                                    	                                            #
-# Miscelaneous                                        	                                         #
+# Utilitaries                                         	                                         #
 #                                                    	                    	                    	  #
 ###################################################################################################
 ###################################################################################################
@@ -148,7 +152,22 @@ repeat(){
 	local end=${1:-$1}
 	local str="${2:-$2}"
 	local range=$(seq $start $end)
-	for i in $range ; do echo -e -n "${str}"; done
+	
+	for i in $range ; do 
+		echo -e -n "${str}"; 
+	done
+}
+
+embrace () {
+	echo "$2$1$3"
+}
+
+embraceColor () {
+	echo "$2$1${Clear}"
+}
+
+toNum () {
+	echo "$1+0" | bc
 }
 
 removeSpaces (){
@@ -233,14 +252,25 @@ printHeader () {
 	local ur_corner="$7"
 	local bl_corner="$8"
 	local br_corner="$9"
-
+	
 	local box_title=${10}
 
+	# Lengths
 	local len_upper_marker=${#upper_marker}
 	local len_right_marker=${#right_marker}
 	local len_lower_marker=${#lower_marker}
 	local len_left_marker=${#left_marker}
 
+	upper_marker="$(embraceColor "$upper_marker" "$HEADER_COLOR")" 
+	right_marker="$(embraceColor "$right_marker" "$HEADER_COLOR")"
+	lower_marker="$(embraceColor "$lower_marker" "$HEADER_COLOR")"
+	left_marker="$(embraceColor "$left_marker" "$HEADER_COLOR")"
+	
+	ul_corner="$(embraceColor "$ul_corner" "$HEADER_COLOR")" 
+	ur_corner="$(embraceColor "$ur_corner" "$HEADER_COLOR")"
+	bl_corner="$(embraceColor "$bl_corner" "$HEADER_COLOR")"
+	br_corner="$(embraceColor "$br_corner" "$HEADER_COLOR")"
+	
 	# Print menu with number of characters equal to terminal charsize  
 	if [[ $(tput cols) -lt $(($line_length+2+$len_left_marker+ $len_right_marker)) ]]; then
 		line_length=$(($(tput cols)- 2 -$len_left_marker-$len_right_marker))
@@ -278,7 +308,7 @@ printHeader () {
 					   	     sed -r "$regex_trimmer" | \
 					   	     awk "$fill_command")"
 	
-	local colored_title="$(echo "$uncolored_row" | sed "s/$uncolored_title/`printf "$box_title"`/g")"
+	local colored_title="$(printf %b\\n "$(sed "s/$uncolored_title/$box_title/g" <<< "$uncolored_row")")"
 
 	echo -e "$upper_fence"
 	echo -e "$upper_space" 
@@ -288,7 +318,12 @@ printHeader () {
 }
 
 printFooter () {
-	echo -e "$LEFT_FOOTER_CORNER$(repeat $1 $2)$RIGHT_FOOTER_CORNER"
+	local l_footer_corner="$(embraceColor "$LEFT_FOOTER_CORNER" "$FOOTER_COLOR")"
+	local r_footer_corner="$(embraceColor "$RIGHT_FOOTER_CORNER" "$FOOTER_COLOR")"
+	local m_footer="$(repeat $1 $2)"
+	m_footer="$(embraceColor "$m_footer" "$FOOTER_COLOR")"
+
+	echo -e "$l_footer_corner$m_footer$r_footer_corner"
 }
 
 requestApproval () {
@@ -297,8 +332,8 @@ requestApproval () {
 	while [ true ];
 	do
 		local available_responses="[${BGreen}y${Clear}/${BRed}n${Clear}/q]"
-		read -p "$(echo -e "Do you wish to ${BBlue}$1${Clear}? $available_responses:")" response
-		
+		read -p "$(echo -e "Do you wish to ${BBlue}$1${Clear}? $available_responses:")" response 
+
 		final_response="$response"
 
 		local confirmation_tokens="[${BGreen}y${Clear}/${BRed}n${Clear}]: "
@@ -344,16 +379,6 @@ requestApprovalAndEvaluate () {
 
 decorateAskAndEval () {
 	requestApprovalAndEvaluate "$2" "wrapHeaderFooter \"$1\" \"$3\""	
-}
-
-installPackage(){
-	if [ $2 -eq 1 ];
-	then
-	  echo -e "${BGreen}$4 package \"$1\" is already installed!${Clear}"
-	else
-	  eval $3
-	  echo -e "${BRed}$4 \"$1\" was not installed.${Clear} ${BGreen}It is installed now!${Clear}"
-	fi
 }
 
 ###################################################################################################
@@ -623,8 +648,9 @@ resolveGitSSH () {
 	requestApprovalAndEvaluate 'generate SSH key' "generateSSHKey $filename $suffix"
 	
 	# Wait user configure the SSH on its SCM platform
+	local ssh_path="/$(whoami)/$filename _$file_suffix.pub"
 	echo
-	echo -e "In case you generated the SSH, it is available on /$(whoami)/$filename _$file_suffix.pub"
+	echo -e "In case you generated the SSH, it is available on $ssh_path"
 	echo -e "Its content is on your clipboard (Ctrl+V on some text field to see it)!"
 	echo
 	echo -e "Then, go to your SCM platform (github, bitbucket, gitlab, ...) \
