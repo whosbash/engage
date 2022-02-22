@@ -14,21 +14,21 @@ source "$cwd/core/utils.sh"
 # Repositories
 addExternalRepositories () {
 	# Repository 1
-	local repo_cmd_1='sudo add-apt-repository ppa:xtradeb/apps'
+	local repo_cmd_1='add-apt-repository ppa:xtradeb/apps'
 	
 	local tmp_path="/usr/share/keyrings/brave-browser-archive-keyring.gpg" 
 	local route_="https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg"
 
-	local repo_subcmd1_2="sudo curl -fsSLo $tmp_path $route_"
+	local repo_subcmd1_2="curl -fsSLo $tmp_path $route_"
 
 	local tmp_path="/usr/share/keyrings/brave-browser-archive-keyring.gpg"
 	local route_="https://brave-browser-apt-release.s3.brave.com/"
 	local repo_subcmd2p1_2="echo \"deb [signed-by=$tmp_path arch=amd64] $route_ stable main\""
-	local repo_subcmd2p2_2='sudo tee /etc/apt/sources.list.d/brave-browser-release.list'
+	local repo_subcmd2p2_2='tee /etc/apt/sources.list.d/brave-browser-release.list'
 	local repo_cmd_2="$repo_subcmd1_2 && $repo_subcmd2p1_2 | $repo_subcmd2p2_2"
 	
 	local import_repo_cmds="$repo_cmd_1 && $repo_cmd_2"
-	
+	echo "$import_repo_cmds"
 	wrapHeaderFooter "Import external repositories" "$import_repo_cmds"
 }
 

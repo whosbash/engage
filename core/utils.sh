@@ -108,7 +108,7 @@ manageRepository () {
 	local head="Repository ${BBlue}$1${Clear}:" 
 
 	wrapHeaderFooter "`echo -e $head` Update and upgrade current packages." "$2"
-	wrapHeaderFooter "`echo -e $head` List and/or fix current packages." "$3"
+	wrapHeaderFooter "`echo -e $head` List and\\or fix current packages." "$3"
 	wrapHeaderFooter "`echo -e $head` Remove unnecessary packages." "$4"
 }
 
