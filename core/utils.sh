@@ -51,8 +51,8 @@ installPackages () {
 
 # Repository apt
 manageAptPackages () {
-	local pkg_bundle_1='git python3-dev python3-pip python3-venv python3-apt'
-	local pkg_bundle_2='virtualenv ipe xclip google-chrome-stable texlive-xetex'
+	local pkg_bundle_1='git python3-dev python3-pip python3-venv'
+	local pkg_bundle_2='virtualenv ipe xclip snapd texlive-xetex'
 	local pkg_bundle_3='texlive-fonts-recommended texlive-plain-generic npm chromium'
 	local pkg_bundle_4='apt-transport-https curl'
 
@@ -97,7 +97,7 @@ managePipPackages () {
 managePackages() {	
 	manageAptPackages
 	echo 
-	manageAptPackages
+	manageSnapPackages
 	echo
 	managePipPackages
 	echo
@@ -108,7 +108,7 @@ manageRepository () {
 	local head="Repository ${BBlue}$1${Clear}:" 
 
 	wrapHeaderFooter "`echo -e $head` Update and upgrade current packages." "$2"
-	wrapHeaderFooter "`echo -e $head` List and\\or fix current packages." "$3"
+	wrapHeaderFooter "`echo -e $head` List and/or fix current packages." "$3"
 	wrapHeaderFooter "`echo -e $head` Remove unnecessary packages." "$4"
 }
 

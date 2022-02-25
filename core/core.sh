@@ -35,7 +35,7 @@ addExternalRepositories () {
 # Update, upgrade and fix packages
 resolveAPTRepository() {
 	manageRepository 'apt' \
-					 'apt -qq update && apt -qq upgrade -y && apt full-upgrade' \
+					 'apt -qq -y update && apt-get -qq -y upgrade && apt full-upgrade' \
 					 'apt --fix-broken install' \
 					 'apt autoremove -y'
 }
