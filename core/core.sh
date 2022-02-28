@@ -28,46 +28,30 @@ addExternalRepositories () {
 	local repo_cmd_2="$repo_subcmd1_2 && $repo_subcmd2p1_2 | $repo_subcmd2p2_2"
 	
 	local import_repo_cmds="$repo_cmd_1 && $repo_cmd_2"
-	echo "$import_repo_cmds"
+	
 	wrapHeaderFooter "Import external repositories" "$import_repo_cmds"
 }
 
-# Update, upgrade and fix packages
-resolveAPTRepository() {
-	manageRepository 'apt' \
-					 'apt -qq -y update && apt-get -qq -y upgrade && apt full-upgrade' \
-					 'apt --fix-broken install' \
-					 'apt autoremove -y'
-}
-
-resolveSnapRepository() {
-	manageRepository 	'snap' \
-					  	'snap refresh' \
-						'echo -e Package manager snap may require manual repare...' \
-						'snap list --all | \
-						 while read snapname ver rev trk pub notes; \
-						 do if [[ $notes = *disabled* ]]; \
-						 then sudo snap remove "$snapname" --revision="$rev"; \
-						 echo -e "Package $snapname is removed!"; fi; done; \
-						 echo -e "All unnecesssary packages were removed."'
-}
-
-resolvePipRepository() {
-	manageRepository 'pip' \
-					 'pip-review --raw | xargs -n1 pip install -U' \
-					 'pipconflictchecker' \
-					 'echo -e Package manager pip has no autoremove unused packages...'
+manageDuplicates () {
+	wrapHeaderFooter "Remove package duplicates" "removeDuplicates"
 }
 
 resolveRepositories () {
-	addExternalRepositories
-
 	resolveAPTRepository
 	resolveSnapRepository
 	resolvePipRepository
 }
 
+# Install useful utils from different package repositories
+managePackages() {		
+	wrapHeaderFooter "Install repositories packages" \
+					 "manageAptPackages && echo && \
+					  manageSnapPackages && echo && \
+					  managePipPackages && echo"
+}
+
 resolvePackages () { 
+	addExternalRepositories
 	managePackages
 	resolveRepositories
 	manageDuplicates

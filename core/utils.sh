@@ -4,7 +4,7 @@ cwd="$(echo "$(pwd)")"
 source "$cwd/styles/styles.sh"
 
 # SCM available
-# Take note: lower case names separated by ", "
+# Take note: lower case names separated by " "
 AVAILABLE_SCM='github bucket gitlab'
 
 ###################################################################################################
@@ -52,11 +52,12 @@ installPackages () {
 # Repository apt
 manageAptPackages () {
 	local pkg_bundle_1='git python3-dev python3-pip python3-venv'
-	local pkg_bundle_2='virtualenv ipe xclip snapd texlive-xetex'
-	local pkg_bundle_3='texlive-fonts-recommended texlive-plain-generic npm chromium'
-	local pkg_bundle_4='apt-transport-https curl'
+	local pkg_bundle_2='virtualenv ipe xclip snapd '
+	local pkg_bundle_3='texlive-xetex texlive-plain-generic'
+	local pkg_bundle_4='texlive-fonts-recommended texlive-font-utils'
+	local pkg_bundle_5='apt-transport-https curl  npm chromium'
 
-	local packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3 $pkg_bundle_4"
+	local packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3 $pkg_bundle_4 $pkg_bundle_5"
 
 	local param="'$(echo '${Status}')'"
 	local head='$(dpkg-query -W -f='
@@ -83,7 +84,7 @@ managePipPackages () {
 	# Repository pip
 	local pkg_bundle_1='numpy pandas matplotlib scipy scikit-learn'
 	local pkg_bundle_2='notebook pip-review pip-conflict-checker'
-	local pkg_bundle_3='nbconvert[webpdf]'
+	local pkg_bundle_3='nbconvert[webpdf] pdfCropMargins'
 	
 	local packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3"
 
@@ -93,32 +94,45 @@ managePipPackages () {
 	installPackages 'apt' "$packages" "$is_installed" "$install_cmd" 	
 }
 
-# Install useful utils from different package repositories
-managePackages() {	
-	manageAptPackages
-	echo 
-	manageSnapPackages
-	echo
-	managePipPackages
-	echo
-}
-
 # Update, upgrade and fix packages
 manageRepository () {
 	local head="Repository ${BBlue}$1${Clear}:" 
 
 	wrapHeaderFooter "`echo -e $head` Update and upgrade current packages." "$2"
-	wrapHeaderFooter "`echo -e $head` List and/or fix current packages." "$3"
+	wrapHeaderFooter "`echo -e $head` List and-or fix current packages." "$3"
 	wrapHeaderFooter "`echo -e $head` Remove unnecessary packages." "$4"
+}
+
+# Update, upgrade and fix packages
+resolveAPTRepository() {
+	manageRepository 'apt' \
+					 'apt -qq -y update && apt-get -qq -y upgrade && apt full-upgrade' \
+					 'apt --fix-broken install' \
+					 'apt autoremove -y'
+}
+
+resolveSnapRepository() {
+	manageRepository 'snap' \
+					 'snap refresh' \
+					 'echo -e Package manager snap may require manual repare...' \
+					 'snap list --all | \
+					  while read snapname ver rev trk pub notes; \
+					  do if [[ $notes = *disabled* ]]; \
+					  then sudo snap remove "$snapname" --revision="$rev"; \
+					  echo -e "Package $snapname is removed!"; fi; done; \
+					  echo -e "All unnecesssary packages were removed."'
+}
+
+resolvePipRepository() {
+	manageRepository 'pip' \
+					 'pip-review --raw | xargs -n1 pip install -U' \
+					 'pipconflictchecker' \
+					 'echo -e Package manager pip has no autoremove unused packages...'
 }
 
 removeDuplicates () {
 	chmod a+x 'aptsources-cleanup.pyz'
 	./aptsources-cleanup.pyz
-}
-
-manageDuplicates () {
-	wrapHeaderFooter "Remove package duplicates" "removeDuplicates"
 }
 
 generateSSHKey () {
