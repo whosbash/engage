@@ -83,7 +83,7 @@ managePipPackages () {
 	# Repository pip
 	local pkg_bundle_1='numpy pandas matplotlib scipy scikit-learn'
 	local pkg_bundle_2='notebook pip-review pip-conflict-checker'
-	local pkg_bundle_3='nbconvert[webpdf]'
+	local pkg_bundle_3='nbconvert jupyterhub'
 	
 	local packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3"
 
