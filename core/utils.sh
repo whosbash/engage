@@ -5,7 +5,7 @@ source "$cwd/styles/styles.sh"
 
 # SCM available
 # Take note: lower case names separated by " "
-AVAILABLE_SCM='github bucket gitlab'
+AVAILABLE_SCM='github bitbucket gitlab'
 
 ###################################################################################################
 ###################################################################################################
@@ -143,7 +143,7 @@ generateSSHKey () {
 	declare file_name=$1
 	
 	# Generate ssh key
-	ssh-keygen -t $2 -C "$(getInfo 'e-mail')"
+	ssh-keygen -t "$2" -C "$(getInfo 'e-mail')"
 	
 	# Agent
 	eval "$(ssh-agent -s)"
