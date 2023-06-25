@@ -7,6 +7,28 @@ source "$cwd/styles/styles.sh"
 # Take note: lower case names separated by " "
 AVAILABLE_SCM='github bitbucket gitlab'
 
+# PACKAGES
+# Take note: Add more in need
+
+# APT 
+pkg_bundle_1='git python3-dev python3-pip python3-venv'
+pkg_bundle_2='virtualenv ipe xclip snapd '
+pkg_bundle_3='texlive-xetex texlive-plain-generic'
+pkg_bundle_4='texlive-fonts-recommended texlive-font-utils'
+pkg_bundle_5='apt-transport-https curl  npm chromium'
+
+apt_packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3 $pkg_bundle_4 $pkg_bundle_5"
+
+# SNAP 
+snap_packages="slack sublime-text gimp ngrok"
+
+# PIP
+pkg_bundle_1='numpy pandas matplotlib scipy scikit-learn'
+pkg_bundle_2='notebook pip-review pip-conflict-checker'
+pkg_bundle_3='nbconvert jupyterhub pdfCropMargins ansi2txt'
+
+pip_packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3"
+
 ###################################################################################################
 ###################################################################################################
 #                                                    	                                     	  #
@@ -51,14 +73,6 @@ installPackages () {
 
 # Repository apt
 manageAptPackages () {
-	local pkg_bundle_1='git python3-dev python3-pip python3-venv'
-	local pkg_bundle_2='virtualenv ipe xclip snapd '
-	local pkg_bundle_3='texlive-xetex texlive-plain-generic'
-	local pkg_bundle_4='texlive-fonts-recommended texlive-font-utils'
-	local pkg_bundle_5='apt-transport-https curl  npm chromium'
-
-	local packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3 $pkg_bundle_4 $pkg_bundle_5"
-
 	local param="'$(echo '${Status}')'"
 	local head='$(dpkg-query -W -f='
 	local tail=' package_name | grep -c "ok installed")'
@@ -66,32 +80,23 @@ manageAptPackages () {
 	local is_installed="$head$param$tail"
 	local install_cmd='apt install --upgrade package_name -y'
 
-	installPackages 'apt' "$packages" "$is_installed" "$install_cmd"
+	installPackages 'apt' "$apt_packages" "$is_installed" "$install_cmd"
 }
 
 # Repository snap
 manageSnapPackages () {
-	local packages="slack sublime-text gimp"
-
 	local is_installed='$(("$(snap list | grep -c package_name)" > "0"))'
 	local install_cmd='snap install package_name --classic'
 
-	installPackages 'apt' "$packages" "$is_installed" "$install_cmd" 
+	installPackages 'snap' "$snap_packages" "$is_installed" "$install_cmd" 
 }
 
 # Repository Pip
 managePipPackages () {
-	# Repository pip
-	local pkg_bundle_1='numpy pandas matplotlib scipy scikit-learn'
-	local pkg_bundle_2='notebook pip-review pip-conflict-checker'
-	local pkg_bundle_3='nbconvert jupyterhub pdfCropMargins'
-	
-	local packages="$pkg_bundle_1 $pkg_bundle_2 $pkg_bundle_3"
-
 	local is_installed='$(("$(pip freeze | grep -c package_name)" > "0"))'
 	local install_cmd='pip install package_name'
 
-	installPackages 'apt' "$packages" "$is_installed" "$install_cmd" 	
+	installPackages 'pip' "$pip_packages" "$is_installed" "$install_cmd" 	
 }
 
 # Update, upgrade and fix packages

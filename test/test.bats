@@ -1,10 +1,14 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bats
 
-setup() {
-    load 'test_helper/bats-support/load'
-    load 'test_helper/bats-assert/load'
-    load 'test_helper/bats-file/load'
-    
-    DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )"
-    PATH="$DIR/../src:$PATH"
+@test "It Works" {
+    # Arrange
+    # Prepare "the world" for your test
+
+    # Act
+    # Run your code
+    result="$(echo 2+2 | bc)"
+
+    # Assert
+    # Make assertions to ensure that the code does what it should
+    [ "$result" -eq 4 ]
 }
