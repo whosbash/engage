@@ -45,9 +45,9 @@ resolveRepositories () {
 # Install useful utils from different package repositories
 managePackages() {		
 	wrapHeaderFooter "Install repositories packages" \
-					 "manageAptPackages && echo && \
+					 "managePipPackages && echo && \
 					  manageSnapPackages && echo && \
-					  managePipPackages && echo"
+					  manageAptPackages && echo"
 }
 
 resolvePackages () { 
