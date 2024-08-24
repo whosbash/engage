@@ -12,10 +12,11 @@ source "$cwd/core/utils.sh"
 ###################################################################################################
 
 # Repositories
-addExternalRepositories () {
+addRepositories () {
 	# Repository 1
 	local repo_cmd_1='add-apt-repository ppa:xtradeb/apps'
 	
+	# Repository 2
 	local tmp_path="/usr/share/keyrings/brave-browser-archive-keyring.gpg" 
 	local route_="https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg"
 
@@ -26,10 +27,19 @@ addExternalRepositories () {
 	local repo_subcmd2p1_2="echo \"deb [signed-by=$tmp_path arch=amd64] $route_ stable main\""
 	local repo_subcmd2p2_2='tee /etc/apt/sources.list.d/brave-browser-release.list'
 	local repo_cmd_2="$repo_subcmd1_2 && $repo_subcmd2p1_2 | $repo_subcmd2p2_2"
-	
-	local import_repo_cmds="$repo_cmd_1 && $repo_cmd_2"
+
+	local import_repo_cmds="$repo_cmd_1 && $repo_cmd_2 && $repo_cmd_3"
 	
 	wrapHeaderFooter "Import external repositories" "$import_repo_cmds"
+}
+
+InstallEssentialPackages () {
+	local essential_apt_packages_cmd="apt install python3-pip"
+	local essential_pip_packages_cmd="pip install ansi2txt"
+	local essential_cmds="$essential_apt_packages_cmd && $essential_pip_packages_cmd"
+
+	echo "Installing essential packages..."
+	eval "$essential_cmds"
 }
 
 manageDuplicates () {
@@ -38,8 +48,8 @@ manageDuplicates () {
 
 resolveRepositories () {
 	resolveAPTRepository
-	resolveSnapRepository
 	resolvePipRepository
+	resolveSnapRepository
 }
 
 # Install useful utils from different package repositories
@@ -50,8 +60,7 @@ managePackages() {
 					  manageAptPackages && echo"
 }
 
-resolvePackages () { 
-	addExternalRepositories
+resolvePackages () {
 	managePackages
 	resolveRepositories
 	manageDuplicates

@@ -25,8 +25,9 @@ source "$cwd/core/core.sh"
 ###################################################################################################
 ###################################################################################################
 
-prepareSystemConfig $1
+InstallEssentialPackages
 preparePackages
+prepareSystemConfig $1
 prepareGit
 
 exit 1;

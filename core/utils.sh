@@ -108,6 +108,13 @@ manageRepository () {
 	wrapHeaderFooter "`echo -e $head` Remove unnecessary packages." "$4"
 }
 
+resolvePipRepository() {
+	manageRepository 'pip' \
+					 'pip-review --raw | xargs -n1 pip install -U' \
+					 'pipconflictchecker' \
+					 'echo -e Package manager pip has no autoremove unused packages...'
+}
+
 # Update, upgrade and fix packages
 resolveAPTRepository() {
 	manageRepository 'apt' \
@@ -126,13 +133,6 @@ resolveSnapRepository() {
 					  then sudo snap remove "$snapname" --revision="$rev"; \
 					  echo -e "Package $snapname is removed!"; fi; done; \
 					  echo -e "All unnecesssary packages were removed."'
-}
-
-resolvePipRepository() {
-	manageRepository 'pip' \
-					 'pip-review --raw | xargs -n1 pip install -U' \
-					 'pipconflictchecker' \
-					 'echo -e Package manager pip has no autoremove unused packages...'
 }
 
 removeDuplicates () {
